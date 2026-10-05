@@ -192,25 +192,76 @@ function closeEnough(said, expected, ratio){
   });
 }
 let activeRec = null;
-function listen(onText, onErr){
-  if (!window.isSecureContext){ onErr('⚠️ El micrófono necesita que la página se abra por https:// (por ejemplo, desde GitHub Pages o Netlify), no como archivo.'); return; }
-  if (!SR){ onErr('Tu navegador no tiene reconocimiento de voz. Prueba con Chrome (Android o escritorio) o Safari en iPhone.'); return; }
-  if (activeRec){ try{ activeRec.abort(); }catch(e){} }
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+/* Escucha robusta:
+ * - Solo dice «Habla ahora» cuando el micrófono está realmente encendido (onaudiostart).
+ * - Usa resultados parciales: si el navegador no entrega un resultado «final», se usa lo último que oyó.
+ * - Modo continuo (salvo iPhone): no corta en la primera pausa; termina tras ~1,2 s de silencio después de hablar.
+ * - Si no oyó nada, reintenta solo una vez antes de rendirse (ventana total de ~10 s).
+ * - Tocar el micrófono otra vez detiene la escucha y evalúa lo oído. */
+function listen(onText, onErr, onStatus){
+  onStatus = onStatus || (() => {});
+  if (!window.isSecureContext){ onErr('⚠️ El micrófono necesita que la página se abra por https:// (por ejemplo, desde GitHub Pages o Netlify), no como archivo.'); return null; }
+  if (!SR){ onErr('Tu navegador no tiene reconocimiento de voz. Prueba con Chrome (Android o escritorio) o Safari en iPhone.'); return null; }
+  if (activeRec) activeRec.cancel();
   stopAudio();
-  const rec = new SR(); activeRec = rec;
-  rec.lang = L.voice; rec.maxAlternatives = 5; rec.interimResults = false;
-  let got = false;
-  rec.onresult = e => { got = true; onText(Array.from(e.results[0]).map(r => r.transcript)); };
-  rec.onerror = e => {
-    got = true;
-    const m = {'not-allowed': 'Necesitas permitir el micrófono para esta función.', 'permission-denied': 'Necesitas permitir el micrófono para esta función.',
-      'no-speech': 'No se detectó voz — inténtalo de nuevo.', 'network': 'El reconocimiento de voz necesita conexión a internet.', 'aborted': ''};
-    onErr(m[e.error] != null ? m[e.error] : 'Error al reconocer la voz: ' + e.error);
+  const session = {finished: false, alts: [], heard: false, attempts: 0, rec: null, silenceT: null, maxT: null};
+  const finish = (fn) => {
+    if (session.finished) return; session.finished = true;
+    clearTimeout(session.silenceT); clearTimeout(session.maxT);
+    try{ session.rec && session.rec.abort(); }catch(e){}
+    if (activeRec === session) activeRec = null;
+    fn();
   };
-  rec.onend = () => { activeRec = null; if (!got) onErr('No se detectó voz — inténtalo de nuevo.'); };
-  try{ rec.start(); }catch(e){ onErr('No se pudo iniciar el micrófono.'); }
-  return rec;
+  const deliver = () => finish(() => {
+    if (session.alts.length) onText(session.alts);
+    else if (session.heard) onErr('Te oí, pero no entendí las palabras. Acércate al micrófono y habla un poco más despacio.');
+    else onErr('No se detectó voz. Espera a ver «Habla ahora» y prueba otra vez (revisa que el micrófono correcto esté permitido).');
+  });
+  session.stop = () => { if (session.alts.length || session.heard) deliver(); else finish(() => onErr('')); };   // segundo toque
+  session.cancel = () => finish(() => {});
+  const armSilence = () => { clearTimeout(session.silenceT); session.silenceT = setTimeout(deliver, 1300); };
+  function start(){
+    session.attempts++;
+    const rec = new SR(); session.rec = rec;
+    rec.lang = L.voice; rec.maxAlternatives = 5; rec.interimResults = true; rec.continuous = !IS_IOS;
+    rec.onaudiostart = () => { onStatus('ready'); if (navigator.vibrate) try{ navigator.vibrate(25); }catch(e){} };
+    rec.onspeechstart = () => { session.heard = true; onStatus('hearing'); };
+    rec.onresult = e => {
+      session.heard = true;
+      const res = e.results[e.results.length - 1];
+      // Junta lo dicho en todos los segmentos (en modo continuo puede llegar en trozos).
+      const joined = Array.from(e.results).map(r => r[0].transcript).join(' ').trim();
+      const alts = Array.from(res).map(r => r.transcript.trim()).filter(Boolean);
+      session.alts = Array.from(new Set([joined].concat(alts))).filter(Boolean);
+      onStatus('hearing', session.alts[0]);
+      if (res.isFinal && !rec.continuous) deliver(); else armSilence();
+    };
+    rec.onerror = e => {
+      if (session.finished) return;
+      if (e.error === 'no-speech' || e.error === 'aborted') return;          // lo resuelve onend
+      const m = {'not-allowed': 'Necesitas permitir el micrófono para esta página (candado de la barra de direcciones → Micrófono → Permitir).',
+        'service-not-allowed': 'El navegador bloqueó el reconocimiento de voz. En iPhone activa Ajustes › Safari › Micrófono, y Dictado en Ajustes › General › Teclado.',
+        'audio-capture': 'No se encontró ningún micrófono. Revisa que esté conectado y permitido.',
+        'network': 'El reconocimiento de voz necesita conexión a internet.', 'no-match': ''};
+      if (e.error === 'no-match'){ deliver(); return; }
+      finish(() => onErr(m[e.error] || 'Error al reconocer la voz: ' + e.error));
+    };
+    rec.onend = () => {
+      if (session.finished) return;
+      if (session.alts.length || session.heard){ deliver(); return; }
+      if (session.attempts < 2){ onStatus('retry'); try{ start(); }catch(e){ deliver(); } return; }  // reintento silencioso
+      deliver();
+    };
+    try{ rec.start(); }catch(e){ finish(() => onErr('No se pudo iniciar el micrófono. Cierra otras apps que lo estén usando e inténtalo de nuevo.')); }
+  }
+  activeRec = session;
+  onStatus('starting');
+  session.maxT = setTimeout(deliver, 11000);
+  start();
+  return session;
 }
+const MIC_MSG = {starting: '⏳ Encendiendo el micrófono…', ready: '🎤 Habla ahora', hearing: '👂 Te escucho…', retry: '🎤 Sigo escuchando, habla ahora'};
 
 /* ---------------- Efectos ---------------- */
 function chime(){
@@ -406,7 +457,7 @@ function openSheet(html, keys){
   // El foco pasa a la ventana para que funcionen los atajos (y no se quede en la página de fondo).
   if (!sh.contains(document.activeElement) || !wasOpen) sh.focus({preventScroll: true});
 }
-function closeSheet(){ $('#overlay').classList.remove('open'); sheetKeys = null; document.body.style.overflow = ''; stopAudio(); if (activeRec){ try{ activeRec.abort(); }catch(e){} } quiz = null; review = null; renderHeader(); }
+function closeSheet(){ $('#overlay').classList.remove('open'); sheetKeys = null; document.body.style.overflow = ''; stopAudio(); if (activeRec) activeRec.cancel(); quiz = null; review = null; renderHeader(); }
 const head = title => `<div class="sheet-head"><h3>${title}</h3><button class="close-x" data-act="close" aria-label="Cerrar">✕</button></div>`;
 
 /* ---------------- Repaso espaciado ---------------- */
@@ -591,12 +642,16 @@ function qCheck(){
 }
 function qMic(){
   const q = quiz, it = q.items[q.i];
+  if (activeRec && activeRec.quiz){ activeRec.stop(); return; }
   const btn = $('#sheet .mic'); if (btn) btn.classList.add('listening');
-  q.fb = '🎤 Escuchando…'; q.fbClass = ''; const fb = $('#qFb'); if (fb){ fb.textContent = q.fb; fb.className = 'feedback'; }
-  listen(alts => {
-    if (alts.some(a => closeEnough(a, it.t))){ q.fb = '✅ ¡Correcto! Dijiste: ' + alts[0]; q.fbClass = 'ok'; qResult(true); }
-    else { q.tries = (q.tries || 0) + 1; q.fb = `❌ Se entendió «${alts[0]}». ${q.tries < 3 ? 'Prueba otra vez.' : ''}`; q.fbClass = 'bad'; if (q.tries >= 3) qResult(false); else renderQuiz(); }
-  }, msg => { if (msg){ q.fb = msg; q.fbClass = 'bad'; } renderQuiz(); });
+  const status = (msg, cls) => { q.fb = msg; q.fbClass = cls || ''; const fb = $('#qFb'); if (fb){ fb.textContent = msg; fb.className = 'feedback ' + (cls || ''); } };
+  const rec = listen(alts => {
+    const hit = alts.find(a => closeEnough(a, it.t));
+    if (hit){ status('✅ ¡Correcto! Dijiste: ' + hit, 'ok'); qResult(true); }
+    else { q.tries = (q.tries || 0) + 1; status(`❌ Se entendió «${alts[0]}». ${q.tries < 3 ? 'Prueba otra vez.' : ''}`, 'bad'); if (q.tries >= 3) qResult(false); else renderQuiz(); }
+  }, msg => { status(msg, msg ? 'bad' : ''); renderQuiz(); },
+  (st, heard) => status(heard ? '👂 «' + heard + '»' : MIC_MSG[st]));
+  if (rec) rec.quiz = true;
 }
 function qNext(){ const q = quiz; q.i++; q.answered = false; q.opts = null; q.picked = null; q.typed = ''; q.hint = false; q.fb = ''; q.fbClass = ''; q.tries = 0; q.peek = false; renderQuiz(); }
 function renderQuizResult(){
@@ -732,13 +787,17 @@ function onClick(e){
 function cardMic(id, btn){
   const it = BY_ID[id], fb = $('#fb-' + id);
   const set = (msg, cls) => { if (fb){ fb.textContent = msg; fb.className = 'feedback ' + (cls || ''); } };
-  btn.classList.add('listening'); set('🎤 Escuchando… di la frase ahora');
+  if (activeRec && activeRec.btn === btn){ activeRec.stop(); return; }   // segundo toque: terminar
+  const done = () => btn.classList.remove('listening');
+  btn.classList.add('listening');
   const rec = listen(alts => {
-    btn.classList.remove('listening');
-    if (alts.some(a => closeEnough(a, it.t))){ set('✅ ¡Correcto! Dijiste: ' + alts[0], 'ok'); addXP(2); bumpMastery(id); }
+    done();
+    const hit = alts.find(a => closeEnough(a, it.t));
+    if (hit){ set('✅ ¡Correcto! Dijiste: ' + hit, 'ok'); addXP(2); bumpMastery(id); }
     else set('❌ Casi — se entendió: «' + alts[0] + '». Escucha ▶ y prueba otra vez.', 'bad');
-  }, msg => { btn.classList.remove('listening'); set(msg, 'bad'); });
-  if (!rec) btn.classList.remove('listening');
+  }, msg => { done(); set(msg, msg ? 'bad' : ''); },
+  (st, heard) => set(heard ? '👂 «' + heard + '»' : MIC_MSG[st] + (st === 'ready' ? ' (toca 🎤 otra vez al terminar)' : '')));
+  if (rec) rec.btn = btn; else done();
 }
 
 function bind(){
