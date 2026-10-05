@@ -197,6 +197,7 @@ function closeEnough(said, expected, ratio){
  * en chino se compara el sonido (pinyin), porque el reconocedor a menudo escribe otro carácter que suena igual.
  * Las palabras de más no restan. Devuelve el porcentaje de la frase que se reconoció. */
 const CHAR_MODE = ['zh', 'ja', 'ko'].includes(L.code);
+const isShort = it => { const k = String(it.t).replace(/\(.*?\)/g, '').replace(/[^\p{L}\p{N}]/gu, ''); return CHAR_MODE ? Array.from(k).length <= 1 : k.length <= 3; };
 const STRICT = {flex: 0.6, normal: 0.75, strict: 0.9};
 function kataToHira(s){ return s.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)); }
 function phonFold(w){ return w.replace(/(.)\1+/g, '$1').replace(/ph/g, 'f').replace(/([bcdfgkprt])h/g, '$1').replace(/y/g, 'i').replace(/w/g, 'u'); }
@@ -214,6 +215,8 @@ const NUM = {};
 ALL.forEach(it => { const d = NUM_ES[it.es]; if (d != null) it.t.split(/\s*\/\s*/).forEach(v => { const k = normTok(v); if (k) NUM[k] = d; }); });
 // Chino: pinyin de cada carácter calculado con contexto (银行 → yín háng), sin tono y con tono.
 if (L.code === 'zh'){ NUM['两'] = '2'; NUM['俩'] = '2'; }
+// El reconocedor a veces devuelve una cifra para una sílaba suelta (四 → «4»): se compara por su sonido.
+const ZH_DIGIT = {'0':['ling','ling2'],'1':['yi','yi1'],'2':['er','er4'],'3':['san','san1'],'4':['si','si4'],'5':['wu','wu3'],'6':['liu','liu4'],'7':['qi','qi1'],'8':['ba','ba1'],'9':['jiu','jiu3']};
 function zhPinyin(text){
   if (L.code !== 'zh' || !window.pinyinPro) return null;
   try{
@@ -231,6 +234,7 @@ function tokenize(text){
   const zp = zhPinyin(t);
   const mk = (d, off) => {
     const key = normTok(d), o = {disp: d, key};
+    if (L.code === 'zh' && ZH_DIGIT[d]){ o.py = ZH_DIGIT[d][0]; o.pyT = ZH_DIGIT[d][1]; return o; }
     if (key && zp && /\p{Script=Han}/u.test(d) && zp.none[off] && zp.none[off] !== d){
       o.py = zp.none[off].replace(/ü/g, 'v'); o.pyT = zp.num[off]; o.pyMark = zp.mark[off];
     }
@@ -287,13 +291,27 @@ function evaluateSpeech(alts, it){
     });
   });
   if (!best) return {ok: false, score: 0, said: alts[0] || '', html: esc(it.t)};
+  // Sílabas sueltas: el reconocedor a veces escribe en letras latinas («ma», «shi», «a»). Se compara con la pronunciación.
+  if (!L.latin && best.score < 1){
+    const target = normRoman(it.r), tFuzzy = L.code === 'zh' ? zhFuzzy(target, settings.strict || 'flex') : target;
+    const romanHit = alts.some(a => {
+      if (!/^[\sa-zA-Z0-9'’.-]+$/.test(a)) return false;
+      const words = a.toLowerCase().split(/\s+/).map(normRoman).filter(Boolean).concat([normRoman(a)]);
+      const rep = t => t && new RegExp('^(?:' + t + '){1,4}$');          // «mama» = «ma» repetida
+      const flex = (settings.strict || 'flex') === 'flex';
+      return words.some(w => w === target || rep(target).test(w) ||
+        (L.code === 'zh' && settings.strict !== 'strict' && (zhFuzzy(w, settings.strict || 'flex') === tFuzzy || rep(tFuzzy).test(zhFuzzy(w, settings.strict || 'flex')))) ||
+        (target.length >= (flex ? 3 : 4) && lev(w, target) <= 1));
+    });
+    if (romanHit){ best.score = 1; best.hitToks = new Set(best.toks); best.said = alts.find(a => /^[\sa-zA-Z0-9'’.-]+$/.test(a)) || best.said; }
+  }
   best.ok = best.score >= (STRICT[settings.strict] || STRICT.flex);
   best.html = best.toks.map(x => {
     if (!x.key) return esc(x.disp);
     const cls = best.hitToks.has(x) ? 'w-hit' : (x.disp === '儿' && L.code === 'zh') ? 'w-opt' : 'w-miss';
     return x.pyMark ? `<ruby class="${cls}">${esc(x.disp)}<rt>${esc(x.pyMark)}</rt></ruby>` : `<span class="${cls}">${esc(x.disp)}</span>`;
   }).join('');
-  if (L.code === 'zh'){ const zp = zhPinyin(best.said); if (zp) best.saidPy = zp.mark.filter(x => /[a-zü]/i.test(x)).join(' '); }
+  if (L.code === 'zh' && /\p{Script=Han}/u.test(best.said)){ const zp = zhPinyin(best.said); if (zp) best.saidPy = zp.mark.filter(x => /[a-zü]/i.test(x)).join(' '); }
   return best;
 }
 function speechFeedbackHTML(ev, opts){
@@ -301,7 +319,7 @@ function speechFeedbackHTML(ev, opts){
   if (ev.ok) return `✅ ¡Correcto!${pct < 100 ? ` (${pct}%)` : ''} <span class="marks" lang="${L.voice}">${ev.html}</span>`;
   return `<div>❌ ${pct}% — se entendió: «${esc(ev.said)}»${ev.saidPy ? ` <span class="said-py">(${esc(ev.saidPy)})</span>` : ''}</div>
     <div class="marks" lang="${L.voice}">${ev.html}</div>
-    <div class="fb-actions">${L.code === 'zh' ? 'En rojo, las sílabas que no se reconocieron: compara su pinyin con lo que se entendió.' : 'En rojo, lo que no se reconoció.'} ${opts && opts.override ? `<button class="link-btn" data-act="${opts.override}" data-id="${opts.id || ''}">✓ Lo dije bien, contar como correcta</button>` : ''}</div>`;
+    <div class="fb-actions">${L.code === 'zh' ? 'En rojo, las sílabas que no se reconocieron: compara su pinyin con lo que se entendió.' : 'En rojo, lo que no se reconoció.'} ${opts && opts.override ? `<button class="link-btn" data-act="${opts.override}" data-id="${opts.id || ''}">✓ Lo dije bien, contar como correcta</button>` : ''}${opts && opts.id ? `<button class="link-btn" data-act="compare" data-id="${opts.id}">🎧 Grabarme y comparar</button>` : ''}</div>`;
 }
 
 let activeRec = null;
@@ -897,6 +915,8 @@ function onClick(e){
     case 'override': { const f = $('#fb-' + id); if (f){ f.innerHTML = '✓ Contada como correcta.'; f.className = 'feedback ok'; } addXP(1); bumpMastery(id); break; }
     case 'qoverride': if (quiz && !quiz.answered){ quiz.fbHTML = '✓ Contada como correcta.'; quiz.fbClass = 'ok'; qResult(true); } break;
     case 'strict': settings.strict = el.dataset.v; save.settings(); openSettings(); break;
+    case 'compare': compareVoice(id); break;
+    case 'replay-mine': { stopAudio(); const a = new Audio(el.dataset.url); currentAudio = a; a.play().catch(() => {}); break; }
     case 'stats': openStats(); break;
     case 'settings': openSettings(); break;
     case 'rate': settings.rate = +el.dataset.v; save.settings(); openSettings(); speak(ALL[0].t); break;
@@ -919,8 +939,40 @@ function cardMic(id, btn){
     if (fb){ fb.innerHTML = speechFeedbackHTML(ev, {override: 'override', id}); fb.className = 'feedback ' + (ev.ok ? 'ok' : 'bad'); }
     if (ev.ok){ addXP(2); bumpMastery(id); }
   }, msg => { done(); set(msg, msg ? 'bad' : ''); },
-  (st, heard) => set(heard ? '👂 «' + heard + '»' : MIC_MSG[st] + (st === 'ready' ? ' (toca 🎤 otra vez al terminar)' : '')));
+  (st, heard) => set(heard ? '👂 «' + heard + '»' : MIC_MSG[st] + (st === 'ready' ? (isShort(it) ? ` — repítela 2 o 3 veces seguidas: ${it.t} ${it.t} ${it.t}` : ' (toca 🎤 otra vez al terminar)') : '')));
   if (rec) rec.btn = btn; else done();
+}
+
+/* Grabarse y comparar: útil cuando el reconocedor no puede juzgar (sílabas sueltas, tonos).
+ * Graba tu voz unos segundos, la reproduce y luego reproduce el modelo; tú decides si sonó igual. */
+let compareUrl = null;
+async function compareVoice(id){
+  const it = BY_ID[id], fb = $('#fb-' + id); if (!fb) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){ toast('Este navegador no permite grabar audio.'); return; }
+  if (activeRec) activeRec.cancel();
+  stopAudio();
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
+  catch(e){ fb.textContent = 'Necesitas permitir el micrófono para grabarte.'; fb.className = 'feedback bad'; return; }
+  const mr = new MediaRecorder(stream), chunks = [];
+  mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  const secs = isShort(it) ? 2.5 : Math.min(7, 2 + Array.from(it.t).length * (CHAR_MODE ? 0.45 : 0.12));
+  fb.innerHTML = `🔴 Grabando ${secs.toFixed(1).replace('.', ',')} s… di <b lang="${L.voice}">${esc(it.t)}</b>`; fb.className = 'feedback';
+  mr.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    if (compareUrl) URL.revokeObjectURL(compareUrl);
+    compareUrl = URL.createObjectURL(new Blob(chunks, {type: mr.mimeType || 'audio/webm'}));
+    fb.innerHTML = `🎧 Suena primero tu voz y después el modelo. ¿Se parecen?
+      <div class="fb-actions"><button class="link-btn" data-act="replay-mine" data-url="${compareUrl}">▶ Mi voz</button>
+      <button class="link-btn" data-act="play" data-id="${id}">▶ Modelo</button>
+      <button class="link-btn" data-act="compare" data-id="${id}">🔁 Grabar otra vez</button>
+      <button class="link-btn" data-act="override" data-id="${id}">✓ Sonó igual, contar como correcta</button></div>`;
+    const a = new Audio(compareUrl); currentAudio = a;
+    a.onended = () => setTimeout(() => speak(it.t), 350);
+    a.play().catch(() => speak(it.t));
+  };
+  mr.start();
+  setTimeout(() => { if (mr.state === 'recording') mr.stop(); }, secs * 1000);
 }
 
 function bind(){
