@@ -2,16 +2,749 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e11d3e">
 <title>学中文 — Plan de un año</title>
-<link rel="stylesheet" href="assets/app.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2248%22 fill=%22%23e11d3e%22/%3E%3Ctext x=%2250%22 y=%2268%22 font-size=%2252%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22%3EA%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f6f4ef; --surface:#ffffff; --surface2:#f1eee8; --text:#1d1b18; --muted:#6f6b63; --line:#e6e2d9;
+  --accent:#e11d3e; --ok:#16a34a; --warn:#d97706; --bad:#dc2626;
+  --shadow:0 1px 2px rgba(20,16,10,.06), 0 6px 18px rgba(20,16,10,.05);
+  --r:18px;
+}
+body.dark{
+  --bg:#0e0e10; --surface:#17171a; --surface2:#212125; --text:#f3f1ec; --muted:#9d9a92; --line:#2a2a2f;
+  --accent:#fb4368; --ok:#34d399; --warn:#fbbf24; --bad:#f87171;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 22px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45;padding-bottom:max(40px,env(safe-area-inset-bottom));transition:background .25s,color .25s}
+button{font:inherit;color:inherit;cursor:pointer}
+.cjk{font-family:"Noto Serif CJK SC","Noto Serif CJK JP","Noto Serif CJK KR","Songti SC","Hiragino Mincho ProN","Source Han Serif",serif}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent);outline-offset:2px}
+
+/* ---------- Top bar ---------- */
+.topbar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.topbar-in{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:max(10px,env(safe-area-inset-top))}
+.back{display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--muted);font-weight:600;font-size:.92rem;padding:8px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.back:hover{color:var(--text)}
+.brand{flex:1;display:flex;align-items:center;gap:8px;font-weight:700;min-width:0}
+.brand .flag{font-size:1.4rem}
+.brand .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:1.1rem}
+.icon-btn:hover{border-color:var(--accent)}
+
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+
+/* ---------- Hero ---------- */
+.hero{border-radius:24px;padding:22px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 17%,var(--surface)),var(--surface) 70%);border:1px solid var(--line);box-shadow:var(--shadow);display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.ring{position:relative;width:118px;height:118px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .trk{stroke:color-mix(in srgb,var(--accent) 16%,var(--surface2));fill:none;stroke-width:10}
+.ring .bar{stroke:var(--accent);fill:none;stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.2,.8,.2,1)}
+.ring .pct{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:800;font-size:1.65rem;line-height:1}
+.ring .pct small{display:block;font-size:.66rem;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.hero h1{margin:0;font-size:clamp(1.7rem,5vw,2.4rem);line-height:1.1;letter-spacing:-.01em}
+.hero .sub{margin:6px 0 14px;color:var(--muted);font-size:.95rem}
+.stats{display:flex;flex-wrap:wrap;gap:8px}
+.stat{background:color-mix(in srgb,var(--surface) 80%,transparent);border:1px solid var(--line);border-radius:12px;padding:7px 12px;font-size:.85rem;color:var(--muted);white-space:nowrap}
+.stat b{color:var(--text);font-size:1rem;margin-right:3px}
+
+.actions-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.cta{border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:14px 12px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
+.cta:hover{transform:translateY(-1px);border-color:var(--accent)}
+.cta.primary{background:var(--accent);color:#fff;border-color:transparent}
+
+/* ---------- Search & filters ---------- */
+.search{position:relative;margin-bottom:10px}
+.search input{width:100%;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:14px;padding:13px 44px 13px 44px;font:inherit;box-shadow:var(--shadow)}
+.search input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)}
+.search .ic{position:absolute;left:15px;top:50%;transform:translateY(-50%);opacity:.55;pointer-events:none}
+.search .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:var(--surface2);width:28px;height:28px;border-radius:50%;color:var(--muted)}
+.seg{display:inline-flex;background:var(--surface2);border-radius:12px;padding:3px;gap:2px;margin-bottom:6px}
+.seg button{border:0;background:transparent;padding:7px 14px;border-radius:10px;font-weight:600;font-size:.86rem;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+/* ---------- Chips ---------- */
+.chips-block{margin:8px 0 6px}
+.chips-label{font-size:.72rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:12px 2px 6px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.chip{flex:0 0 auto;scroll-snap-align:start;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:9px 13px;font-weight:600;font-size:.9rem;white-space:nowrap;transition:all .15s}
+.chip .em{font-size:1.1rem}
+.chip small{color:var(--muted);font-weight:600;font-size:.74rem}
+.chip:hover{border-color:var(--accent)}
+.chip.active{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 35%,transparent)}
+.chip.active small{color:rgba(255,255,255,.85)}
+.chip.complete::after{content:"🏅"}
+body.searching .chip.active{background:var(--surface);color:var(--text);border-color:var(--line);box-shadow:none}
+body.searching .chip.active small{color:var(--muted)}
+
+/* ---------- Phase ---------- */
+.phase{display:none;margin-top:10px}
+.phase.show{display:block}
+.phase-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:14px 2px 4px;flex-wrap:wrap}
+.phase-head h2{margin:0;font-size:1.35rem;letter-spacing:-.01em}
+.phase-head .months{font-size:.78rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.07em}
+.phase-focus{color:var(--muted);font-size:.94rem;margin:2px 2px 10px}
+.pbar{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin:0 2px 12px}
+.pbar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .5s}
+.pbar-l{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin:0 2px 5px}
+
+details.habits{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-bottom:6px;overflow:hidden}
+details.habits summary{list-style:none;cursor:pointer;padding:13px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;font-size:.95rem}
+details.habits summary::-webkit-details-marker{display:none}
+details.habits .chev{transition:transform .2s;color:var(--muted)}
+details.habits[open] .chev{transform:rotate(90deg)}
+.task{display:flex;gap:12px;align-items:flex-start;padding:11px 16px;border-top:1px solid var(--line)}
+.task input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent);flex:none}
+.task .tn{font-weight:600}
+.task .tn.done{text-decoration:line-through;color:var(--muted)}
+.task .tm{font-size:.82rem;color:var(--muted)}
+.tag{background:var(--surface2);border-radius:8px;padding:1px 8px;margin-left:4px}
+.milestone{margin:0;padding:13px 16px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--accent) 7%,var(--surface));font-size:.92rem}
+
+.group{margin-top:18px}
+.group-label{font-size:.78rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 2px 8px;display:flex;align-items:center;gap:10px}
+.group-label::after{content:"";flex:1;height:1px;background:var(--line)}
+.grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:720px){.grid{grid-template-columns:1fr 1fr}.hero{padding:28px}.ring{width:140px;height:140px}}
+
+/* ---------- Card ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 14px 12px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;box-shadow:var(--shadow);position:relative;transition:border-color .2s,background .2s,transform .15s}
+.card:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.card .target{font-size:1.4rem;font-weight:650;line-height:1.25;word-break:break-word}
+.card .roman{color:var(--accent);font-size:.92rem;font-weight:600;margin-top:1px}
+.card .gloss{color:var(--muted);font-size:.93rem}
+.card .btns{display:flex;gap:8px}
+.rbtn{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface2);display:grid;place-items:center;font-size:1.1rem;transition:all .15s;padding:0}
+.rbtn.play{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--line));background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
+.rbtn:hover{transform:scale(1.06)}
+.rbtn:active{transform:scale(.94)}
+.rbtn.playing{background:var(--accent);color:#fff;animation:pulse 1s infinite}
+.rbtn.listening{background:var(--bad);border-color:var(--bad);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 35%,transparent)}50%{box-shadow:0 0 0 9px transparent}}
+.foot{grid-column:1/-1;display:flex;align-items:center;gap:10px;min-height:20px;flex-wrap:wrap}
+.dots{display:flex;gap:5px;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dot.f{background:var(--accent)}
+.badge-ok{display:none;font-size:.74rem;font-weight:700;color:var(--ok)}
+.card.mastered{border-color:color-mix(in srgb,var(--ok) 45%,var(--line));background:color-mix(in srgb,var(--ok) 5%,var(--surface))}
+.card.mastered .dot.f{background:var(--ok)}
+.card.mastered .badge-ok{display:inline}
+.fb{font-size:.82rem;color:var(--muted);flex:1;min-width:0}
+.fb.correct{color:var(--ok);font-weight:600}
+.fb.incorrect{color:var(--bad)}
+.fb a{color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline}
+.card.flash{animation:flash .65s}
+@keyframes flash{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--ok) 60%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
+
+.empty{text-align:center;color:var(--muted);padding:34px 10px}
+.empty .big{font-size:2rem}
+
+/* ---------- Overlays ---------- */
+.overlay{position:fixed;inset:0;z-index:60;background:rgba(10,10,12,.55);backdrop-filter:blur(4px);display:none;align-items:flex-end;justify-content:center;padding:0}
+.overlay.open{display:flex}
+@media(min-width:720px){.overlay{align-items:center;padding:20px}}
+.sheet{background:var(--surface);width:100%;max-width:520px;border-radius:26px 26px 0 0;padding:22px 20px max(24px,env(safe-area-inset-bottom));max-height:92vh;overflow:auto;animation:up .25s ease}
+@media(min-width:720px){.sheet{border-radius:26px}}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.sheet-head h3{margin:0;font-size:1.2rem}
+.x{border:0;background:var(--surface2);width:34px;height:34px;border-radius:50%}
+.muted{color:var(--muted);font-size:.9rem}
+.row{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.row label{font-weight:700;font-size:.88rem}
+select,input[type=range]{width:100%}
+select{padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--surface2);color:var(--text);font:inherit}
+input[type=range]{accent-color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--surface2);border-radius:12px;padding:11px 14px;font-weight:700}
+.btn.accent{background:var(--accent);color:#fff;border-color:transparent}
+.btn.danger{color:var(--bad)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+.vstatus{font-size:.85rem;padding:10px 12px;border-radius:12px;background:var(--surface2)}
+.vstatus.ok{color:var(--ok)} .vstatus.warn{color:var(--bad)}
+
+.qprog{height:6px;background:var(--surface2);border-radius:9px;overflow:hidden;margin:8px 0 16px}
+.qprog i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.qbig{text-align:center;padding:10px 0 4px}
+.qbig .t{font-size:2rem;font-weight:700;line-height:1.2}
+.qbig .r{color:var(--accent);font-weight:600;margin-top:4px}
+.qopt{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 16px;margin-top:9px;font-weight:600;transition:all .15s}
+.qopt:hover{border-color:var(--accent)}
+.qopt.correct{background:color-mix(in srgb,var(--ok) 16%,var(--surface));border-color:var(--ok)}
+.qopt.wrong{background:color-mix(in srgb,var(--bad) 14%,var(--surface));border-color:var(--bad)}
+.score{font-size:3rem;font-weight:800;text-align:center;color:var(--accent);margin:8px 0}
+
+.flip{perspective:900px;margin:12px 0}
+.flip-in{position:relative;min-height:230px;transition:transform .45s;transform-style:preserve-3d;cursor:pointer}
+.flip.on .flip-in{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:22px;border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;text-align:center;background:var(--surface2)}
+.face.back{transform:rotateY(180deg);background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 14%,var(--surface)),var(--surface))}
+.face .t{font-size:2rem;font-weight:700;line-height:1.2;word-break:break-word}
+.face .r{color:var(--accent);font-weight:600}
+.face .hint{font-size:.8rem;color:var(--muted)}
+.fc-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translate(-50%,30px);background:var(--text);color:var(--bg);padding:11px 18px;border-radius:99px;font-weight:700;font-size:.9rem;opacity:0;pointer-events:none;transition:all .3s;z-index:90;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.foot-note{margin:34px 4px 0;text-align:center;color:var(--muted);font-size:.82rem}
+
+@media(max-width:430px){
+  .hero{grid-template-columns:1fr;text-align:center;justify-items:center}
+  .stats{justify-content:center}
+  .brand .nm{font-size:.95rem}
+  .back span{display:none}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
 <body>
-<script>try{var t=localStorage.getItem("idiomas-theme")||localStorage.getItem("chinese-plan-theme");if(t?t==="dark":matchMedia("(prefers-color-scheme: dark)").matches)document.body.classList.add("dark");}catch(e){}</script>
-<div id="app"><noscript>Esta app necesita JavaScript activado.</noscript></div>
-<script src="data/zh.js"></script>
-<script src="assets/app.js"></script>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="back" href="index.html" aria-label="Volver a idiomas">←<span> Idiomas</span></a>
+    <div class="brand"><span class="flag" id="brandFlag"></span><span class="nm" id="brandName"></span></div>
+    <button class="icon-btn" id="themeToggle" onclick="toggleTheme()" aria-label="Cambiar tema">🌙</button>
+    <button class="icon-btn" onclick="openSettings()" aria-label="Ajustes de voz">⚙️</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <div class="ring">
+      <svg viewBox="0 0 120 120"><circle class="trk" cx="60" cy="60" r="52"/><circle class="bar" id="ringBar" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg>
+      <div class="pct"><div><span id="ringPct">0</span>%<small>progreso</small></div></div>
+    </div>
+    <div>
+      <h1 id="heroTitle"></h1>
+      <p class="sub" id="heroSub"></p>
+      <div class="stats">
+        <div class="stat"><b id="stMastered">0</b>dominadas</div>
+        <div class="stat"><b id="stStreak">0</b>🔥 racha</div>
+        <div class="stat"><b id="stTasks">0</b>hábitos</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions-row">
+    <button class="cta primary" onclick="startQuiz()">🎲 Examen sorpresa</button>
+    <button class="cta" onclick="startFlash()">🃏 Tarjetas de repaso</button>
+  </div>
+
+  <div class="search">
+    <span class="ic">🔍</span>
+    <input id="searchBox" type="search" inputmode="search" autocomplete="off" placeholder="Buscar palabra o frase en todo el vocabulario…" aria-label="Buscar">
+    <button class="clr" id="searchClr" hidden aria-label="Borrar búsqueda">✕</button>
+  </div>
+
+  <div class="seg" id="seg" role="tablist" aria-label="Filtro">
+    <button class="on" data-f="all">Todas</button>
+    <button data-f="todo">Por aprender</button>
+    <button data-f="done">Dominadas</button>
+  </div>
+
+  <div class="chips-block">
+    <div class="chips-label">Plan de 12 meses</div>
+    <div class="chips" id="chipsPlan"></div>
+    <div class="chips-label">Vocabulario por tema</div>
+    <div class="chips" id="chipsTopics"></div>
+  </div>
+
+  <div id="phasesContainer"></div>
+
+  <p class="foot-note" id="footNote"></p>
+</main>
+
+<!-- Settings -->
+<div class="overlay" id="settingsOv" onclick="if(event.target===this)closeOverlays()">
+  <div class="sheet">
+    <div class="sheet-head"><h3>⚙️ Voz y ajustes</h3><button class="x" onclick="closeOverlays()" aria-label="Cerrar">✕</button></div>
+    <div class="vstatus" id="voiceStatus">Comprobando voces disponibles…</div>
+    <div class="row" id="voicePickerRow" hidden>
+      <label for="voicePicker">Voz para escuchar</label>
+      <select id="voicePicker" onchange="onVoicePicked(this.value)"></select>
+    </div>
+    <div class="row">
+      <label for="rateSlider">Velocidad: <span id="rateVal">0.85</span>×</label>
+      <input type="range" id="rateSlider" min="0.5" max="1.1" step="0.05" value="0.85">
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="testVoice()">🔊 Probar sonido</button>
+      <button class="btn danger" onclick="resetProgress()">Reiniciar progreso</button>
+    </div>
+    <p class="muted" style="margin-top:16px">Tu progreso se guarda en este navegador. El micrófono necesita https:// (GitHub Pages o Netlify funcionan).</p>
+  </div>
+</div>
+
+<!-- Quiz / Flashcards -->
+<div class="overlay" id="gameOv" onclick="if(event.target===this)closeOverlays()">
+  <div class="sheet" id="gameBox"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CFG = {"name": "Chino", "nameLower": "chino", "native": "中文", "flag": "🇨🇳", "code": "zh-CN", "prefix": "zh", "storage": "chinese-plan", "cjk": true};
+const data = [{"title": "Cimientos", "months": "Meses 1–2", "focus": "Pinyin, tonos y frases de supervivencia", "tasks": [{"name": "Práctica diaria de tonos", "time": "15 min/día", "tool": "Yoyo Chinese"}, {"name": "Vocabulario base (300–500 palabras)", "time": "20 min/día", "tool": "Anki — mazo HSK1"}, {"name": "Escucha activa", "time": "15 min/día", "tool": "Podcast chino lento"}, {"name": "Shadowing en voz alta", "time": "15 min/día", "tool": "Repetir audio nativo"}, {"name": "Presentarte y pedir comida sin leer", "time": "Meta", "tool": "Auto-evaluación"}, {"name": "Contar, dar la hora, pedir direcciones", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Preséntate, pide comida, pregunta direcciones, cuenta y da la hora — todo sin leer.", "audio": [{"hanzi": "你好", "pinyin": "nǐ hǎo", "es": "hola"}, {"hanzi": "谢谢", "pinyin": "xièxie", "es": "gracias"}, {"hanzi": "不客气", "pinyin": "bú kèqi", "es": "de nada"}, {"hanzi": "对不起", "pinyin": "duìbuqǐ", "es": "perdón"}, {"hanzi": "没关系", "pinyin": "méi guānxi", "es": "no hay problema"}, {"hanzi": "我叫...", "pinyin": "wǒ jiào...", "es": "me llamo..."}, {"hanzi": "很高兴认识你", "pinyin": "hěn gāoxìng rènshi nǐ", "es": "mucho gusto"}, {"hanzi": "多少钱?", "pinyin": "duōshao qián?", "es": "¿cuánto cuesta?"}, {"hanzi": "我要这个", "pinyin": "wǒ yào zhège", "es": "quiero esto"}, {"hanzi": "洗手间在哪儿?", "pinyin": "xǐshǒujiān zài nǎr?", "es": "¿dónde está el baño?"}]}, {"title": "Bloques básicos", "months": "Meses 3–5", "focus": "Vocabulario HSK2–3, radicales, primeros caracteres, conversación real", "tasks": [{"name": "Vocabulario nuevo (15/día)", "time": "20 min/día", "tool": "Anki — HSK2–3"}, {"name": "Radicales y componentes", "time": "15 min/día", "tool": "~150 radicales core"}, {"name": "Input comprensible", "time": "20 min/día", "tool": "Video graduado"}, {"name": "Conversación con tutor", "time": "20 min, 3x/sem", "tool": "iTalki / intercambio"}, {"name": "Conversación de 5 minutos sobre tu día", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Mantén una conversación de 5 minutos sobre vida diaria, trabajo y familia.", "audio": [{"hanzi": "我在学中文", "pinyin": "wǒ zài xué zhōngwén", "es": "estoy aprendiendo chino"}, {"hanzi": "你做什么工作?", "pinyin": "nǐ zuò shénme gōngzuò?", "es": "¿en qué trabajas?"}, {"hanzi": "我有点儿忙", "pinyin": "wǒ yǒudiǎnr máng", "es": "estoy un poco ocupado"}, {"hanzi": "周末你想做什么?", "pinyin": "zhōumò nǐ xiǎng zuò shénme?", "es": "¿qué quieres hacer el fin de semana?"}, {"hanzi": "我住在...", "pinyin": "wǒ zhù zài...", "es": "vivo en..."}, {"hanzi": "你家有几个人?", "pinyin": "nǐ jiā yǒu jǐ ge rén?", "es": "¿cuántas personas hay en tu familia?"}, {"hanzi": "我今天很忙", "pinyin": "wǒ jīntiān hěn máng", "es": "hoy estoy muy ocupado"}]}, {"title": "Expansión", "months": "Meses 6–8", "focus": "Vocabulario HSK4, oraciones complejas, lectura de textos cortos", "tasks": [{"name": "Vocabulario nuevo (15–20/día)", "time": "20 min/día", "tool": "Anki — HSK4"}, {"name": "Lectura graduada", "time": "15 min/día", "tool": "Mandarin Companion"}, {"name": "Escucha a velocidad nativa", "time": "20 min/día", "tool": "Podcasts / videos cortos"}, {"name": "Conversación — opiniones e historias", "time": "30 min, 3x/sem", "tool": "Tutor"}, {"name": "Contar una historia del pasado", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Discute opiniones, cuenta una historia personal y entiende medios simples en chino.", "audio": [{"hanzi": "我觉得这个想法不错", "pinyin": "wǒ juéde zhège xiǎngfǎ búcuò", "es": "creo que esta idea no está mal"}, {"hanzi": "以前我住在...", "pinyin": "yǐqián wǒ zhù zài...", "es": "antes vivía en..."}, {"hanzi": "你同意吗?", "pinyin": "nǐ tóngyì ma?", "es": "¿estás de acuerdo?"}, {"hanzi": "后来发生了什么?", "pinyin": "hòulái fāshēngle shénme?", "es": "¿qué pasó después?"}, {"hanzi": "简单来说...", "pinyin": "jiǎndān láishuō...", "es": "para decirlo simple..."}, {"hanzi": "我不太确定", "pinyin": "wǒ bú tài quèdìng", "es": "no estoy muy seguro"}, {"hanzi": "这让我想起了...", "pinyin": "zhè ràng wǒ xiǎngqǐle...", "es": "esto me recuerda a..."}]}, {"title": "Empuje final", "months": "Meses 9–12", "focus": "Habla natural, contenido nativo, menos dependencia de traducción", "tasks": [{"name": "Repaso + vocabulario nuevo (10–15/día)", "time": "15 min/día", "tool": "Anki — HSK4–5"}, {"name": "Contenido nativo sin subtítulos", "time": "25 min/día", "tool": "Series, YouTube, podcasts"}, {"name": "Conversación intensiva", "time": "30–40 min, 4x/sem", "tool": "Tutor + intercambio"}, {"name": "Diario hablado", "time": "15 min/día", "tool": "Hablar en voz alta sobre tu día"}, {"name": "Conversación fluida con nativos", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Sostén conversaciones reales con hablantes nativos, a ritmo casi natural, sobre temas variados.", "audio": [{"hanzi": "说实话...", "pinyin": "shuō shíhuà...", "es": "para ser honesto..."}, {"hanzi": "这跟我想的不一样", "pinyin": "zhè gēn wǒ xiǎng de bù yíyàng", "es": "esto no es lo que pensaba"}, {"hanzi": "你能再说一遍吗?", "pinyin": "nǐ néng zài shuō yíbiàn ma?", "es": "¿puedes repetirlo?"}, {"hanzi": "总的来说...", "pinyin": "zǒngdeláishuō...", "es": "en resumen..."}, {"hanzi": "换句话说...", "pinyin": "huàn jù huà shuō...", "es": "en otras palabras..."}, {"hanzi": "这就是我的看法", "pinyin": "zhè jiùshì wǒ de kànfǎ", "es": "esa es mi opinión"}, {"hanzi": "我懂你的意思", "pinyin": "wǒ dǒng nǐ de yìsi", "es": "entiendo lo que quieres decir"}]}, {"title": "Vocabulario del súper", "months": "Uso diario", "focus": "Palabras y frases para el supermercado y la vida cotidiana — practícalas antes de tu próxima compra", "tasks": [{"name": "Repasa esta lista antes de ir al supermercado", "time": "5 min", "tool": "Esta página"}, {"name": "Usa al menos 3 frases en tu próxima compra real", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes pedir, preguntar precio y nombrar al menos 15 productos comunes sin ayuda.", "audioGroups": [{"label": "Verduras y frutas", "items": [{"hanzi": "西红柿", "pinyin": "xīhóngshì", "es": "tomate"}, {"hanzi": "土豆", "pinyin": "tǔdòu", "es": "papa"}, {"hanzi": "洋葱", "pinyin": "yángcōng", "es": "cebolla"}, {"hanzi": "胡萝卜", "pinyin": "húluóbo", "es": "zanahoria"}, {"hanzi": "生菜", "pinyin": "shēngcài", "es": "lechuga"}, {"hanzi": "苹果", "pinyin": "píngguǒ", "es": "manzana"}, {"hanzi": "香蕉", "pinyin": "xiāngjiāo", "es": "plátano"}, {"hanzi": "黄瓜", "pinyin": "huángguā", "es": "pepino"}, {"hanzi": "橙子", "pinyin": "chéngzi", "es": "naranja"}]}, {"label": "Bebidas", "items": [{"hanzi": "水", "pinyin": "shuǐ", "es": "agua"}, {"hanzi": "汽水", "pinyin": "qìshuǐ", "es": "gaseosa"}, {"hanzi": "果汁", "pinyin": "guǒzhī", "es": "jugo"}, {"hanzi": "牛奶", "pinyin": "niúnǎi", "es": "leche"}, {"hanzi": "啤酒", "pinyin": "píjiǔ", "es": "cerveza"}, {"hanzi": "咖啡", "pinyin": "kāfēi", "es": "café"}, {"hanzi": "茶", "pinyin": "chá", "es": "té"}]}, {"label": "Comida y básicos", "items": [{"hanzi": "米饭", "pinyin": "mǐfàn", "es": "arroz"}, {"hanzi": "面包", "pinyin": "miànbāo", "es": "pan"}, {"hanzi": "鸡蛋", "pinyin": "jīdàn", "es": "huevo"}, {"hanzi": "肉", "pinyin": "ròu", "es": "carne"}, {"hanzi": "鱼", "pinyin": "yú", "es": "pescado"}, {"hanzi": "盐", "pinyin": "yán", "es": "sal"}, {"hanzi": "糖", "pinyin": "táng", "es": "azúcar"}, {"hanzi": "奶酪", "pinyin": "nǎilào", "es": "queso"}]}, {"label": "Frases para comprar", "items": [{"hanzi": "这个多少钱?", "pinyin": "zhège duōshao qián?", "es": "¿cuánto cuesta esto?"}, {"hanzi": "你们有...吗?", "pinyin": "nǐmen yǒu... ma?", "es": "¿tienen...?"}, {"hanzi": "我要买这个", "pinyin": "wǒ yào mǎi zhège", "es": "quiero comprar esto"}, {"hanzi": "可以便宜一点吗?", "pinyin": "kěyǐ piányi yìdiǎn ma?", "es": "¿puede ser más barato?"}, {"hanzi": "我可以刷卡吗?", "pinyin": "wǒ kěyǐ shuākǎ ma?", "es": "¿puedo pagar con tarjeta?"}, {"hanzi": "给我一个袋子", "pinyin": "gěi wǒ yí ge dàizi", "es": "deme una bolsa"}, {"hanzi": "收银台在哪儿?", "pinyin": "shōuyíntái zài nǎr?", "es": "¿dónde está la caja?"}, {"hanzi": "有优惠吗?", "pinyin": "yǒu yōuhuì ma?", "es": "¿hay descuento?"}]}]}, {"title": "Salidas y socializar", "months": "Uso diario", "focus": "Frases para salidas con amigos, citas y charla casual — romper el hielo y mantener la conversación fluida", "tasks": [{"name": "Practica esta lista antes de tu próxima salida", "time": "5 min", "tool": "Esta página"}, {"name": "Usa al menos 3 frases en una conversación real", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes invitar a alguien a salir, mantener charla casual y hacer planes sin cambiar a tu idioma.", "audioGroups": [{"label": "Invitar y hacer planes", "items": [{"hanzi": "你今晚有空吗?", "pinyin": "nǐ jīnwǎn yǒu kòng ma?", "es": "¿estás libre esta noche?"}, {"hanzi": "要不要一起吃饭?", "pinyin": "yàobúyào yìqǐ chīfàn?", "es": "¿quieres comer juntos?"}, {"hanzi": "我们几点见面?", "pinyin": "wǒmen jǐ diǎn jiànmiàn?", "es": "¿a qué hora nos vemos?"}, {"hanzi": "在哪儿见面?", "pinyin": "zài nǎr jiànmiàn?", "es": "¿dónde nos vemos?"}, {"hanzi": "下次再约", "pinyin": "xiàcì zài yuē", "es": "quedamos para la próxima"}, {"hanzi": "你想去哪儿?", "pinyin": "nǐ xiǎng qù nǎr?", "es": "¿a dónde quieres ir?"}, {"hanzi": "我请客", "pinyin": "wǒ qǐngkè", "es": "yo invito"}]}, {"label": "Romper el hielo", "items": [{"hanzi": "你平时喜欢做什么?", "pinyin": "nǐ píngshí xǐhuan zuò shénme?", "es": "¿qué te gusta hacer normalmente?"}, {"hanzi": "你是哪里人?", "pinyin": "nǐ shì nǎlǐ rén?", "es": "¿de dónde eres?"}, {"hanzi": "你喜欢这个地方吗?", "pinyin": "nǐ xǐhuan zhège dìfang ma?", "es": "¿te gusta este lugar?"}, {"hanzi": "我们好像有共同点", "pinyin": "wǒmen hǎoxiàng yǒu gòngtóngdiǎn", "es": "parece que tenemos algo en común"}, {"hanzi": "你多大了?", "pinyin": "nǐ duō dà le?", "es": "¿cuántos años tienes?"}, {"hanzi": "我们是怎么认识的?", "pinyin": "wǒmen shì zěnme rènshi de?", "es": "¿cómo nos conocimos?"}]}, {"label": "Charla casual", "items": [{"hanzi": "真的吗?", "pinyin": "zhēnde ma?", "es": "¿en serio?"}, {"hanzi": "太好笑了", "pinyin": "tài hǎoxiào le", "es": "qué gracioso"}, {"hanzi": "我也这么觉得", "pinyin": "wǒ yě zhème juéde", "es": "yo también pienso eso"}, {"hanzi": "再跟我说说", "pinyin": "zài gēn wǒ shuōshuo", "es": "cuéntame más"}, {"hanzi": "干杯!", "pinyin": "gānbēi!", "es": "¡salud!"}, {"hanzi": "不会吧", "pinyin": "búhuì ba", "es": "no puede ser"}, {"hanzi": "说来话长", "pinyin": "shuōláihuàcháng", "es": "es una historia larga"}]}, {"label": "Cerrar la salida", "items": [{"hanzi": "今天玩得很开心", "pinyin": "jīntiān wánde hěn kāixīn", "es": "hoy la pasé muy bien"}, {"hanzi": "我们该走了", "pinyin": "wǒmen gāi zǒu le", "es": "ya deberíamos irnos"}, {"hanzi": "下次再见", "pinyin": "xiàcì zàijiàn", "es": "nos vemos la próxima"}, {"hanzi": "加一下微信吧", "pinyin": "jiā yíxià wēixìn ba", "es": "agreguemos WeChat"}, {"hanzi": "谢谢你今天陪我", "pinyin": "xièxie nǐ jīntiān péi wǒ", "es": "gracias por acompañarme hoy"}]}]}, {"title": "Conversación fluida", "months": "Uso diario", "focus": "Lo que sostiene una conversación real: opinar, mostrar acuerdo o desacuerdo, pedir aclaración y hablar de tus intereses", "tasks": [{"name": "Repasa esta lista antes de hablar con un amigo", "time": "5 min", "tool": "Esta página"}, {"name": "Úsalas en una llamada o chat de voz real", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes opinar, reaccionar, pedir que te aclaren algo y mantener el hilo sin quedarte en silencio.", "audioGroups": [{"label": "Pedir aclaración", "items": [{"hanzi": "你能说慢一点吗?", "pinyin": "nǐ néng shuō màn yìdiǎn ma?", "es": "¿puedes hablar más despacio?"}, {"hanzi": "这是什么意思?", "pinyin": "zhè shì shénme yìsi?", "es": "¿qué significa esto?"}, {"hanzi": "我没听懂", "pinyin": "wǒ méi tīngdǒng", "es": "no entendí"}, {"hanzi": "你可以打字吗?", "pinyin": "nǐ kěyǐ dǎzì ma?", "es": "¿puedes escribirlo?"}, {"hanzi": "等一下,我在想怎么说", "pinyin": "děng yíxià, wǒ zài xiǎng zěnme shuō", "es": "espera, estoy pensando cómo decirlo"}, {"hanzi": "这个词怎么说?", "pinyin": "zhège cí zěnme shuō?", "es": "¿cómo se dice esta palabra?"}, {"hanzi": "你是说...吗?", "pinyin": "nǐ shì shuō... ma?", "es": "¿quieres decir...?"}]}, {"label": "Opinar y reaccionar", "items": [{"hanzi": "我觉得...", "pinyin": "wǒ juéde...", "es": "yo creo que..."}, {"hanzi": "这要看情况", "pinyin": "zhè yào kàn qíngkuàng", "es": "depende de la situación"}, {"hanzi": "不一定吧", "pinyin": "bù yídìng ba", "es": "no necesariamente"}, {"hanzi": "我没想到", "pinyin": "wǒ méi xiǎngdào", "es": "no me lo esperaba"}, {"hanzi": "有道理", "pinyin": "yǒu dàolǐ", "es": "tiene sentido"}, {"hanzi": "说得对", "pinyin": "shuōde duì", "es": "tienes razón"}, {"hanzi": "我不这么认为", "pinyin": "wǒ bú zhème rènwéi", "es": "yo no pienso así"}]}, {"label": "Estar de acuerdo o no", "items": [{"hanzi": "我同意", "pinyin": "wǒ tóngyì", "es": "estoy de acuerdo"}, {"hanzi": "我不太同意", "pinyin": "wǒ bú tài tóngyì", "es": "no estoy muy de acuerdo"}, {"hanzi": "也许你是对的", "pinyin": "yěxǔ nǐ shì duì de", "es": "quizás tengas razón"}, {"hanzi": "我们各有各的看法", "pinyin": "wǒmen gè yǒu gè de kànfǎ", "es": "cada uno tiene su punto de vista"}, {"hanzi": "完全正确", "pinyin": "wánquán zhèngquè", "es": "totalmente correcto"}, {"hanzi": "我保留意见", "pinyin": "wǒ bǎoliú yìjiàn", "es": "prefiero reservarme mi opinión"}]}, {"label": "Hablar de intereses y planes", "items": [{"hanzi": "我最近迷上了...", "pinyin": "wǒ zuìjìn míshàng le...", "es": "últimamente me enganché con..."}, {"hanzi": "你有什么爱好?", "pinyin": "nǐ yǒu shénme àihào?", "es": "¿qué hobbies tienes?"}, {"hanzi": "我打算...", "pinyin": "wǒ dǎsuàn...", "es": "tengo pensado..."}, {"hanzi": "希望以后能一起去", "pinyin": "xīwàng yǐhòu néng yìqǐ qù", "es": "ojalá podamos ir juntos algún día"}, {"hanzi": "我对...很感兴趣", "pinyin": "wǒ duì... hěn gǎn xìngqù", "es": "me interesa mucho..."}, {"hanzi": "我们应该找时间见面", "pinyin": "wǒmen yīnggāi zhǎo shíjiān jiànmiàn", "es": "deberíamos buscar tiempo para vernos"}]}]}, {"title": "Vida diaria", "months": "Uso diario", "focus": "Emociones, clima, transporte y celular — lo que sale sin buscarlo en cualquier conversación real", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Úsalas cuando surja la situación real", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes describir cómo te sientes, hablar del clima, moverte por la ciudad y resolver problemas con tu celular.", "audioGroups": [{"label": "Emociones", "items": [{"hanzi": "我很累", "pinyin": "wǒ hěn lèi", "es": "estoy muy cansado"}, {"hanzi": "我有点儿紧张", "pinyin": "wǒ yǒudiǎnr jǐnzhāng", "es": "estoy un poco nervioso"}, {"hanzi": "我很兴奋", "pinyin": "wǒ hěn xīngfèn", "es": "estoy muy emocionado"}, {"hanzi": "别担心", "pinyin": "bié dānxīn", "es": "no te preocupes"}, {"hanzi": "我有点儿难过", "pinyin": "wǒ yǒudiǎnr nánguò", "es": "estoy un poco triste"}, {"hanzi": "我很开心", "pinyin": "wǒ hěn kāixīn", "es": "estoy muy feliz"}, {"hanzi": "我有点儿生气", "pinyin": "wǒ yǒudiǎnr shēngqì", "es": "estoy un poco enojado"}]}, {"label": "Clima y tiempo", "items": [{"hanzi": "今天天气怎么样?", "pinyin": "jīntiān tiānqì zěnmeyàng?", "es": "¿cómo está el clima hoy?"}, {"hanzi": "外面在下雨", "pinyin": "wàimiàn zài xiàyǔ", "es": "está lloviendo afuera"}, {"hanzi": "今天很热", "pinyin": "jīntiān hěn rè", "es": "hoy hace mucho calor"}, {"hanzi": "明天见", "pinyin": "míngtiān jiàn", "es": "nos vemos mañana"}, {"hanzi": "我快到了", "pinyin": "wǒ kuài dào le", "es": "ya casi llego"}, {"hanzi": "今天很冷", "pinyin": "jīntiān hěn lěng", "es": "hoy hace mucho frío"}, {"hanzi": "现在几点了?", "pinyin": "xiànzài jǐ diǎn le?", "es": "¿qué hora es?"}]}, {"label": "Transporte y direcciones", "items": [{"hanzi": "怎么去地铁站?", "pinyin": "zěnme qù dìtiězhàn?", "es": "¿cómo llego al metro?"}, {"hanzi": "一直走", "pinyin": "yìzhí zǒu", "es": "sigue derecho"}, {"hanzi": "往左拐", "pinyin": "wǎng zuǒ guǎi", "es": "da vuelta a la izquierda"}, {"hanzi": "打车多少钱?", "pinyin": "dǎchē duōshao qián?", "es": "¿cuánto cuesta un taxi?"}, {"hanzi": "堵车了", "pinyin": "dǔchē le", "es": "hay tráfico"}, {"hanzi": "离这儿远吗?", "pinyin": "lí zhèr yuǎn ma?", "es": "¿está lejos de aquí?"}, {"hanzi": "我迷路了", "pinyin": "wǒ mílù le", "es": "estoy perdido"}]}, {"label": "Celular y tecnología", "items": [{"hanzi": "我的手机没电了", "pinyin": "wǒ de shǒujī méi diàn le", "es": "se me quedó sin batería el celular"}, {"hanzi": "这里有WiFi吗?", "pinyin": "zhèlǐ yǒu WiFi ma?", "es": "¿hay WiFi aquí?"}, {"hanzi": "给我发一下位置", "pinyin": "gěi wǒ fā yíxià wèizhì", "es": "mándame la ubicación"}, {"hanzi": "我信号不好", "pinyin": "wǒ xìnhào bù hǎo", "es": "tengo mala señal"}, {"hanzi": "你可以给我打电话吗?", "pinyin": "nǐ kěyǐ gěi wǒ dǎ diànhuà ma?", "es": "¿me puedes llamar?"}, {"hanzi": "密码是什么?", "pinyin": "mìmǎ shì shénme?", "es": "¿cuál es la contraseña?"}]}]}, {"title": "Palabras esenciales", "months": "Vocabulario base", "focus": "Las ~180 palabras más comunes del idioma, organizadas por tema — la base sobre la que se arma cualquier frase", "tasks": [{"name": "Repasa una categoría cada día", "time": "10 min/día", "tool": "Esta página"}, {"name": "Combina 5 palabras en oraciones propias", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Reconoces y usas de memoria los números, colores, familia, cuerpo, verbos y adjetivos más comunes.", "audioGroups": [{"label": "Números y cantidades", "items": [{"hanzi": "一", "pinyin": "yī", "es": "uno"}, {"hanzi": "二", "pinyin": "èr", "es": "dos"}, {"hanzi": "三", "pinyin": "sān", "es": "tres"}, {"hanzi": "四", "pinyin": "sì", "es": "cuatro"}, {"hanzi": "五", "pinyin": "wǔ", "es": "cinco"}, {"hanzi": "六", "pinyin": "liù", "es": "seis"}, {"hanzi": "七", "pinyin": "qī", "es": "siete"}, {"hanzi": "八", "pinyin": "bā", "es": "ocho"}, {"hanzi": "九", "pinyin": "jiǔ", "es": "nueve"}, {"hanzi": "十", "pinyin": "shí", "es": "diez"}, {"hanzi": "百", "pinyin": "bǎi", "es": "cien"}, {"hanzi": "千", "pinyin": "qiān", "es": "mil"}, {"hanzi": "零", "pinyin": "líng", "es": "cero"}, {"hanzi": "半", "pinyin": "bàn", "es": "mitad"}, {"hanzi": "两", "pinyin": "liǎng", "es": "dos (con contador)"}, {"hanzi": "多", "pinyin": "duō", "es": "mucho"}, {"hanzi": "少", "pinyin": "shǎo", "es": "poco"}]}, {"label": "Colores", "items": [{"hanzi": "红色", "pinyin": "hóngsè", "es": "rojo"}, {"hanzi": "蓝色", "pinyin": "lánsè", "es": "azul"}, {"hanzi": "绿色", "pinyin": "lǜsè", "es": "verde"}, {"hanzi": "黄色", "pinyin": "huángsè", "es": "amarillo"}, {"hanzi": "黑色", "pinyin": "hēisè", "es": "negro"}, {"hanzi": "白色", "pinyin": "báisè", "es": "blanco"}, {"hanzi": "紫色", "pinyin": "zǐsè", "es": "morado"}, {"hanzi": "粉色", "pinyin": "fěnsè", "es": "rosado"}, {"hanzi": "橙色", "pinyin": "chéngsè", "es": "naranja"}, {"hanzi": "灰色", "pinyin": "huīsè", "es": "gris"}]}, {"label": "Familia", "items": [{"hanzi": "爸爸", "pinyin": "bàba", "es": "papá"}, {"hanzi": "妈妈", "pinyin": "māma", "es": "mamá"}, {"hanzi": "儿子", "pinyin": "érzi", "es": "hijo"}, {"hanzi": "女儿", "pinyin": "nǚ'ér", "es": "hija"}, {"hanzi": "哥哥", "pinyin": "gēge", "es": "hermano mayor"}, {"hanzi": "弟弟", "pinyin": "dìdi", "es": "hermano menor"}, {"hanzi": "姐姐", "pinyin": "jiějie", "es": "hermana mayor"}, {"hanzi": "妹妹", "pinyin": "mèimei", "es": "hermana menor"}, {"hanzi": "爷爷", "pinyin": "yéye", "es": "abuelo (paterno)"}, {"hanzi": "奶奶", "pinyin": "nǎinai", "es": "abuela (paterna)"}, {"hanzi": "丈夫", "pinyin": "zhàngfu", "es": "esposo"}, {"hanzi": "妻子", "pinyin": "qīzi", "es": "esposa"}]}, {"label": "Cuerpo", "items": [{"hanzi": "头", "pinyin": "tóu", "es": "cabeza"}, {"hanzi": "眼睛", "pinyin": "yǎnjing", "es": "ojos"}, {"hanzi": "鼻子", "pinyin": "bízi", "es": "nariz"}, {"hanzi": "嘴", "pinyin": "zuǐ", "es": "boca"}, {"hanzi": "耳朵", "pinyin": "ěrduo", "es": "oreja"}, {"hanzi": "手", "pinyin": "shǒu", "es": "mano"}, {"hanzi": "脚", "pinyin": "jiǎo", "es": "pie"}, {"hanzi": "肚子", "pinyin": "dùzi", "es": "panza"}, {"hanzi": "心", "pinyin": "xīn", "es": "corazón"}, {"hanzi": "头发", "pinyin": "tóufa", "es": "cabello"}, {"hanzi": "牙", "pinyin": "yá", "es": "diente"}, {"hanzi": "背", "pinyin": "bèi", "es": "espalda"}]}, {"label": "Días y tiempo", "items": [{"hanzi": "星期一", "pinyin": "xīngqīyī", "es": "lunes"}, {"hanzi": "星期二", "pinyin": "xīngqī'èr", "es": "martes"}, {"hanzi": "星期三", "pinyin": "xīngqīsān", "es": "miércoles"}, {"hanzi": "星期四", "pinyin": "xīngqīsì", "es": "jueves"}, {"hanzi": "星期五", "pinyin": "xīngqīwǔ", "es": "viernes"}, {"hanzi": "星期六", "pinyin": "xīngqīliù", "es": "sábado"}, {"hanzi": "星期天", "pinyin": "xīngqītiān", "es": "domingo"}, {"hanzi": "今天", "pinyin": "jīntiān", "es": "hoy"}, {"hanzi": "明天", "pinyin": "míngtiān", "es": "mañana"}, {"hanzi": "昨天", "pinyin": "zuótiān", "es": "ayer"}, {"hanzi": "现在", "pinyin": "xiànzài", "es": "ahora"}, {"hanzi": "早上", "pinyin": "zǎoshang", "es": "la mañana"}, {"hanzi": "晚上", "pinyin": "wǎnshang", "es": "la noche"}, {"hanzi": "中午", "pinyin": "zhōngwǔ", "es": "mediodía"}]}, {"label": "Verbos comunes", "items": [{"hanzi": "吃", "pinyin": "chī", "es": "comer"}, {"hanzi": "喝", "pinyin": "hē", "es": "beber"}, {"hanzi": "走", "pinyin": "zǒu", "es": "caminar"}, {"hanzi": "看", "pinyin": "kàn", "es": "ver"}, {"hanzi": "听", "pinyin": "tīng", "es": "escuchar"}, {"hanzi": "说", "pinyin": "shuō", "es": "hablar"}, {"hanzi": "写", "pinyin": "xiě", "es": "escribir"}, {"hanzi": "读", "pinyin": "dú", "es": "leer"}, {"hanzi": "睡觉", "pinyin": "shuìjiào", "es": "dormir"}, {"hanzi": "工作", "pinyin": "gōngzuò", "es": "trabajar"}, {"hanzi": "学习", "pinyin": "xuéxí", "es": "estudiar"}, {"hanzi": "买", "pinyin": "mǎi", "es": "comprar"}, {"hanzi": "卖", "pinyin": "mài", "es": "vender"}, {"hanzi": "想", "pinyin": "xiǎng", "es": "pensar / querer"}, {"hanzi": "爱", "pinyin": "ài", "es": "amar"}, {"hanzi": "喜欢", "pinyin": "xǐhuan", "es": "gustar"}, {"hanzi": "去", "pinyin": "qù", "es": "ir"}, {"hanzi": "来", "pinyin": "lái", "es": "venir"}, {"hanzi": "做", "pinyin": "zuò", "es": "hacer"}, {"hanzi": "给", "pinyin": "gěi", "es": "dar"}]}, {"label": "Adjetivos comunes", "items": [{"hanzi": "大", "pinyin": "dà", "es": "grande"}, {"hanzi": "小", "pinyin": "xiǎo", "es": "pequeño"}, {"hanzi": "好", "pinyin": "hǎo", "es": "bueno"}, {"hanzi": "坏", "pinyin": "huài", "es": "malo"}, {"hanzi": "高", "pinyin": "gāo", "es": "alto"}, {"hanzi": "矮", "pinyin": "ǎi", "es": "bajo (estatura)"}, {"hanzi": "长", "pinyin": "cháng", "es": "largo"}, {"hanzi": "短", "pinyin": "duǎn", "es": "corto"}, {"hanzi": "新", "pinyin": "xīn", "es": "nuevo"}, {"hanzi": "旧", "pinyin": "jiù", "es": "viejo (objeto)"}, {"hanzi": "快", "pinyin": "kuài", "es": "rápido"}, {"hanzi": "慢", "pinyin": "màn", "es": "lento"}, {"hanzi": "贵", "pinyin": "guì", "es": "caro"}, {"hanzi": "便宜", "pinyin": "piányi", "es": "barato"}, {"hanzi": "漂亮", "pinyin": "piàoliang", "es": "bonito"}, {"hanzi": "干净", "pinyin": "gānjìng", "es": "limpio"}, {"hanzi": "脏", "pinyin": "zāng", "es": "sucio"}, {"hanzi": "容易", "pinyin": "róngyì", "es": "fácil"}, {"hanzi": "难", "pinyin": "nán", "es": "difícil"}, {"hanzi": "累", "pinyin": "lèi", "es": "cansado"}]}, {"label": "Animales", "items": [{"hanzi": "狗", "pinyin": "gǒu", "es": "perro"}, {"hanzi": "猫", "pinyin": "māo", "es": "gato"}, {"hanzi": "鸟", "pinyin": "niǎo", "es": "pájaro"}, {"hanzi": "马", "pinyin": "mǎ", "es": "caballo"}, {"hanzi": "牛", "pinyin": "niú", "es": "vaca"}, {"hanzi": "猪", "pinyin": "zhū", "es": "cerdo"}, {"hanzi": "兔子", "pinyin": "tùzi", "es": "conejo"}, {"hanzi": "老虎", "pinyin": "lǎohǔ", "es": "tigre"}, {"hanzi": "狮子", "pinyin": "shīzi", "es": "león"}, {"hanzi": "熊猫", "pinyin": "xióngmāo", "es": "panda"}, {"hanzi": "大象", "pinyin": "dàxiàng", "es": "elefante"}, {"hanzi": "猴子", "pinyin": "hóuzi", "es": "mono"}]}, {"label": "Ropa", "items": [{"hanzi": "衣服", "pinyin": "yīfu", "es": "ropa"}, {"hanzi": "裤子", "pinyin": "kùzi", "es": "pantalón"}, {"hanzi": "裙子", "pinyin": "qúnzi", "es": "falda"}, {"hanzi": "鞋子", "pinyin": "xiézi", "es": "zapatos"}, {"hanzi": "帽子", "pinyin": "màozi", "es": "sombrero"}, {"hanzi": "袜子", "pinyin": "wàzi", "es": "calcetines"}, {"hanzi": "外套", "pinyin": "wàitào", "es": "chaqueta"}, {"hanzi": "眼镜", "pinyin": "yǎnjìng", "es": "lentes"}, {"hanzi": "手表", "pinyin": "shǒubiǎo", "es": "reloj"}]}, {"label": "Profesiones", "items": [{"hanzi": "医生", "pinyin": "yīshēng", "es": "médico"}, {"hanzi": "老师", "pinyin": "lǎoshī", "es": "profesor"}, {"hanzi": "学生", "pinyin": "xuéshēng", "es": "estudiante"}, {"hanzi": "警察", "pinyin": "jǐngchá", "es": "policía"}, {"hanzi": "律师", "pinyin": "lǜshī", "es": "abogado"}, {"hanzi": "工程师", "pinyin": "gōngchéngshī", "es": "ingeniero"}, {"hanzi": "厨师", "pinyin": "chúshī", "es": "cocinero"}, {"hanzi": "司机", "pinyin": "sījī", "es": "conductor"}, {"hanzi": "护士", "pinyin": "hùshi", "es": "enfermero"}]}, {"label": "Casa y objetos", "items": [{"hanzi": "房子", "pinyin": "fángzi", "es": "casa"}, {"hanzi": "房间", "pinyin": "fángjiān", "es": "habitación"}, {"hanzi": "桌子", "pinyin": "zhuōzi", "es": "mesa"}, {"hanzi": "椅子", "pinyin": "yǐzi", "es": "silla"}, {"hanzi": "床", "pinyin": "chuáng", "es": "cama"}, {"hanzi": "门", "pinyin": "mén", "es": "puerta"}, {"hanzi": "窗户", "pinyin": "chuānghu", "es": "ventana"}, {"hanzi": "电视", "pinyin": "diànshì", "es": "televisión"}, {"hanzi": "冰箱", "pinyin": "bīngxiāng", "es": "refrigerador"}, {"hanzi": "灯", "pinyin": "dēng", "es": "lámpara"}, {"hanzi": "钥匙", "pinyin": "yàoshi", "es": "llave"}, {"hanzi": "书", "pinyin": "shū", "es": "libro"}, {"hanzi": "电脑", "pinyin": "diànnǎo", "es": "computadora"}, {"hanzi": "杯子", "pinyin": "bēizi", "es": "taza"}]}, {"label": "Preguntas y conectores", "items": [{"hanzi": "什么", "pinyin": "shénme", "es": "qué"}, {"hanzi": "谁", "pinyin": "shéi", "es": "quién"}, {"hanzi": "哪里", "pinyin": "nǎlǐ", "es": "dónde"}, {"hanzi": "为什么", "pinyin": "wèishénme", "es": "por qué"}, {"hanzi": "怎么", "pinyin": "zěnme", "es": "cómo"}, {"hanzi": "什么时候", "pinyin": "shénme shíhou", "es": "cuándo"}, {"hanzi": "因为", "pinyin": "yīnwèi", "es": "porque"}, {"hanzi": "所以", "pinyin": "suǒyǐ", "es": "por eso"}, {"hanzi": "但是", "pinyin": "dànshì", "es": "pero"}, {"hanzi": "而且", "pinyin": "érqiě", "es": "además"}]}, {"label": "Naturaleza", "items": [{"hanzi": "太阳", "pinyin": "tàiyáng", "es": "sol"}, {"hanzi": "月亮", "pinyin": "yuèliang", "es": "luna"}, {"hanzi": "星星", "pinyin": "xīngxing", "es": "estrella"}, {"hanzi": "山", "pinyin": "shān", "es": "montaña"}, {"hanzi": "河", "pinyin": "hé", "es": "río"}, {"hanzi": "海", "pinyin": "hǎi", "es": "mar"}, {"hanzi": "树", "pinyin": "shù", "es": "árbol"}, {"hanzi": "花", "pinyin": "huā", "es": "flor"}, {"hanzi": "风", "pinyin": "fēng", "es": "viento"}, {"hanzi": "雪", "pinyin": "xuě", "es": "nieve"}]}]}, {"title": "Más frases útiles", "months": "Uso diario", "focus": "Restaurante, viajes, salud, trabajo y emergencias — para no quedarte sin palabras en ninguna situación cotidiana", "tasks": [{"name": "Repasa una categoría antes de la situación real", "time": "5 min", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes pedir en un restaurante, viajar, explicar un malestar de salud y pedir ayuda en una emergencia.", "audioGroups": [{"label": "Saludos y cortesía extra", "items": [{"hanzi": "早上好", "pinyin": "zǎoshang hǎo", "es": "buenos días"}, {"hanzi": "晚安", "pinyin": "wǎn'ān", "es": "buenas noches"}, {"hanzi": "请", "pinyin": "qǐng", "es": "por favor"}, {"hanzi": "打扰一下", "pinyin": "dǎrǎo yíxià", "es": "disculpa (para interrumpir)"}, {"hanzi": "慢走", "pinyin": "mànzǒu", "es": "que te vaya bien"}, {"hanzi": "欢迎", "pinyin": "huānyíng", "es": "bienvenido"}, {"hanzi": "恭喜", "pinyin": "gōngxǐ", "es": "felicidades"}, {"hanzi": "祝你好运", "pinyin": "zhù nǐ hǎoyùn", "es": "buena suerte"}]}, {"label": "Restaurante", "items": [{"hanzi": "我要点菜", "pinyin": "wǒ yào diǎncài", "es": "quiero ordenar"}, {"hanzi": "有菜单吗?", "pinyin": "yǒu càidān ma?", "es": "¿tienen menú?"}, {"hanzi": "这个辣吗?", "pinyin": "zhège là ma?", "es": "¿esto es picante?"}, {"hanzi": "我不吃辣", "pinyin": "wǒ bù chī là", "es": "no como picante"}, {"hanzi": "买单", "pinyin": "mǎidān", "es": "la cuenta, por favor"}, {"hanzi": "好吃", "pinyin": "hǎochī", "es": "delicioso"}, {"hanzi": "我饱了", "pinyin": "wǒ bǎo le", "es": "estoy lleno"}, {"hanzi": "再来一份", "pinyin": "zài lái yí fèn", "es": "otra porción, por favor"}, {"hanzi": "有素食吗?", "pinyin": "yǒu sùshí ma?", "es": "¿hay comida vegetariana?"}, {"hanzi": "我对...过敏", "pinyin": "wǒ duì...guòmǐn", "es": "soy alérgico a..."}]}, {"label": "Tiempo verbal y planes", "items": [{"hanzi": "我昨天去了...", "pinyin": "wǒ zuótiān qùle...", "es": "ayer fui a..."}, {"hanzi": "我明天要...", "pinyin": "wǒ míngtiān yào...", "es": "mañana voy a..."}, {"hanzi": "我正在...", "pinyin": "wǒ zhèngzài...", "es": "estoy (haciendo)..."}, {"hanzi": "我已经...了", "pinyin": "wǒ yǐjīng...le", "es": "ya hice..."}, {"hanzi": "我还没...", "pinyin": "wǒ hái méi...", "es": "todavía no he..."}, {"hanzi": "我以后会...", "pinyin": "wǒ yǐhòu huì...", "es": "después haré..."}, {"hanzi": "快到了", "pinyin": "kuài dào le", "es": "ya casi llega"}, {"hanzi": "还要多久?", "pinyin": "hái yào duō jiǔ?", "es": "¿cuánto falta?"}]}, {"label": "Trabajo y estudio", "items": [{"hanzi": "我在...工作", "pinyin": "wǒ zài...gōngzuò", "es": "trabajo en..."}, {"hanzi": "我是学生", "pinyin": "wǒ shì xuéshēng", "es": "soy estudiante"}, {"hanzi": "我在学...", "pinyin": "wǒ zài xué...", "es": "estoy estudiando..."}, {"hanzi": "今天有考试", "pinyin": "jīntiān yǒu kǎoshì", "es": "hoy hay examen"}, {"hanzi": "我请假了", "pinyin": "wǒ qǐngjià le", "es": "pedí el día libre"}, {"hanzi": "会议几点开始?", "pinyin": "huìyì jǐ diǎn kāishǐ?", "es": "¿a qué hora empieza la reunión?"}, {"hanzi": "我很忙", "pinyin": "wǒ hěn máng", "es": "estoy ocupado"}, {"hanzi": "周末愉快", "pinyin": "zhōumò yúkuài", "es": "buen fin de semana"}]}, {"label": "Salud básica", "items": [{"hanzi": "我不舒服", "pinyin": "wǒ bù shūfu", "es": "no me siento bien"}, {"hanzi": "我头疼", "pinyin": "wǒ tóuténg", "es": "me duele la cabeza"}, {"hanzi": "我发烧了", "pinyin": "wǒ fāshāo le", "es": "tengo fiebre"}, {"hanzi": "需要去医院吗?", "pinyin": "xūyào qù yīyuàn ma?", "es": "¿necesito ir al hospital?"}, {"hanzi": "附近有药店吗?", "pinyin": "fùjìn yǒu yàodiàn ma?", "es": "¿hay farmacia cerca?"}, {"hanzi": "我感冒了", "pinyin": "wǒ gǎnmào le", "es": "tengo resfriado"}, {"hanzi": "多喝水", "pinyin": "duō hē shuǐ", "es": "toma más agua"}, {"hanzi": "好好休息", "pinyin": "hǎohao xiūxi", "es": "descansa bien"}]}, {"label": "Viajes y aeropuerto", "items": [{"hanzi": "护照在这里", "pinyin": "hùzhào zài zhèlǐ", "es": "aquí está mi pasaporte"}, {"hanzi": "飞机几点起飞?", "pinyin": "fēijī jǐ diǎn qǐfēi?", "es": "¿a qué hora despega el vuelo?"}, {"hanzi": "行李在哪儿拿?", "pinyin": "xínglǐ zài nǎr ná?", "es": "¿dónde recojo el equipaje?"}, {"hanzi": "我要换钱", "pinyin": "wǒ yào huànqián", "es": "quiero cambiar dinero"}, {"hanzi": "酒店在哪儿?", "pinyin": "jiǔdiàn zài nǎr?", "es": "¿dónde está el hotel?"}, {"hanzi": "我要预订房间", "pinyin": "wǒ yào yùdìng fángjiān", "es": "quiero reservar una habitación"}, {"hanzi": "可以晚点退房吗?", "pinyin": "kěyǐ wǎndiǎn tuìfáng ma?", "es": "¿puedo hacer check-out más tarde?"}, {"hanzi": "一路平安", "pinyin": "yílù píng'ān", "es": "buen viaje"}]}, {"label": "Cortesía y ánimo", "items": [{"hanzi": "没问题", "pinyin": "méi wèntí", "es": "no hay problema"}, {"hanzi": "随便", "pinyin": "suíbiàn", "es": "como sea / lo que sea"}, {"hanzi": "当然", "pinyin": "dāngrán", "es": "claro que sí"}, {"hanzi": "应该的", "pinyin": "yīnggāi de", "es": "es lo justo / de nada"}, {"hanzi": "辛苦了", "pinyin": "xīnkǔ le", "es": "gracias por el esfuerzo"}, {"hanzi": "保重", "pinyin": "bǎozhòng", "es": "cuídate"}, {"hanzi": "加油", "pinyin": "jiāyóu", "es": "¡ánimo!"}, {"hanzi": "祝你生日快乐", "pinyin": "zhù nǐ shēngrì kuàilè", "es": "feliz cumpleaños"}]}, {"label": "Preguntas para conocer gente", "items": [{"hanzi": "你叫什么名字?", "pinyin": "nǐ jiào shénme míngzi?", "es": "¿cómo te llamas?"}, {"hanzi": "你结婚了吗?", "pinyin": "nǐ jiéhūn le ma?", "es": "¿estás casado?"}, {"hanzi": "你有孩子吗?", "pinyin": "nǐ yǒu háizi ma?", "es": "¿tienes hijos?"}, {"hanzi": "你会说英语吗?", "pinyin": "nǐ huì shuō yīngyǔ ma?", "es": "¿hablas inglés?"}, {"hanzi": "这是什么?", "pinyin": "zhè shì shénme?", "es": "¿qué es esto?"}, {"hanzi": "你喜欢中国菜吗?", "pinyin": "nǐ xǐhuan zhōngguócài ma?", "es": "¿te gusta la comida china?"}, {"hanzi": "你去过中国吗?", "pinyin": "nǐ qùguo zhōngguó ma?", "es": "¿has estado en China?"}]}, {"label": "Emergencias", "items": [{"hanzi": "救命!", "pinyin": "jiùmìng!", "es": "¡auxilio!"}, {"hanzi": "请叫警察", "pinyin": "qǐng jiào jǐngchá", "es": "llama a la policía, por favor"}, {"hanzi": "我需要帮助", "pinyin": "wǒ xūyào bāngzhù", "es": "necesito ayuda"}, {"hanzi": "小心!", "pinyin": "xiǎoxīn!", "es": "¡cuidado!"}, {"hanzi": "着火了!", "pinyin": "zháohuǒ le!", "es": "¡hay un incendio!"}, {"hanzi": "我丢了护照", "pinyin": "wǒ diūle hùzhào", "es": "perdí mi pasaporte"}, {"hanzi": "这里有医院吗?", "pinyin": "zhèlǐ yǒu yīyuàn ma?", "es": "¿hay un hospital aquí?"}, {"hanzi": "请帮我叫救护车", "pinyin": "qǐng bāng wǒ jiào jiùhùchē", "es": "llama una ambulancia, por favor"}]}, {"label": "Cantidades en conversación", "items": [{"hanzi": "多少人?", "pinyin": "duōshao rén?", "es": "¿cuántas personas?"}, {"hanzi": "一共多少钱?", "pinyin": "yígòng duōshao qián?", "es": "¿cuánto es en total?"}, {"hanzi": "我要两个", "pinyin": "wǒ yào liǎng ge", "es": "quiero dos"}, {"hanzi": "只有一个", "pinyin": "zhǐyǒu yí ge", "es": "solo hay uno"}, {"hanzi": "差不多", "pinyin": "chàbuduō", "es": "más o menos"}, {"hanzi": "一点也不", "pinyin": "yìdiǎn yě bù", "es": "para nada"}, {"hanzi": "非常", "pinyin": "fēicháng", "es": "muy / extremadamente"}]}]}, {"title": "Comida y cocina", "months": "Vocabulario ampliado", "focus": "Ingredientes, platos, cubiertos y frases para hablar de comida con naturalidad", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes nombrar ingredientes y utensilios, pedir una comida completa y decir cómo está lo que comes.", "audioGroups": [{"label": "Alimentos y platos", "items": [{"hanzi": "鸡肉", "pinyin": "jīròu", "es": "pollo"}, {"hanzi": "猪肉", "pinyin": "zhūròu", "es": "carne de cerdo"}, {"hanzi": "牛肉", "pinyin": "niúròu", "es": "carne de res"}, {"hanzi": "虾", "pinyin": "xiā", "es": "camarón"}, {"hanzi": "汤", "pinyin": "tāng", "es": "sopa"}, {"hanzi": "沙拉", "pinyin": "shālā", "es": "ensalada"}, {"hanzi": "面条", "pinyin": "miàntiáo", "es": "fideos"}, {"hanzi": "三明治", "pinyin": "sānmíngzhì", "es": "sándwich"}, {"hanzi": "黄油", "pinyin": "huángyóu", "es": "mantequilla"}, {"hanzi": "油", "pinyin": "yóu", "es": "aceite"}, {"hanzi": "大蒜", "pinyin": "dàsuàn", "es": "ajo"}, {"hanzi": "柠檬", "pinyin": "níngméng", "es": "limón"}, {"hanzi": "草莓", "pinyin": "cǎoméi", "es": "fresa"}, {"hanzi": "葡萄", "pinyin": "pútao", "es": "uva"}]}, {"label": "Postres, mesa y comidas", "items": [{"hanzi": "冰淇淋", "pinyin": "bīngqílín", "es": "helado"}, {"hanzi": "巧克力", "pinyin": "qiǎokèlì", "es": "chocolate"}, {"hanzi": "饼干", "pinyin": "bǐnggān", "es": "galleta"}, {"hanzi": "蜂蜜", "pinyin": "fēngmì", "es": "miel"}, {"hanzi": "叉子", "pinyin": "chāzi", "es": "tenedor"}, {"hanzi": "刀", "pinyin": "dāo", "es": "cuchillo"}, {"hanzi": "勺子", "pinyin": "sháozi", "es": "cuchara"}, {"hanzi": "盘子", "pinyin": "pánzi", "es": "plato"}, {"hanzi": "杯子", "pinyin": "bēizi", "es": "vaso"}, {"hanzi": "早餐", "pinyin": "zǎocān", "es": "desayuno"}, {"hanzi": "午餐", "pinyin": "wǔcān", "es": "almuerzo"}, {"hanzi": "晚餐", "pinyin": "wǎncān", "es": "cena"}]}, {"label": "Hambre y sabores", "items": [{"hanzi": "我饿了", "pinyin": "wǒ è le", "es": "Tengo hambre"}, {"hanzi": "我渴了", "pinyin": "wǒ kě le", "es": "Tengo sed"}, {"hanzi": "很好吃", "pinyin": "hěn hǎochī", "es": "Está rico"}, {"hanzi": "很烫", "pinyin": "hěn tàng", "es": "Está caliente"}, {"hanzi": "很凉", "pinyin": "hěn liáng", "es": "Está frío"}, {"hanzi": "太咸了", "pinyin": "tài xián le", "es": "Está muy salado"}]}]}, {"title": "Viajes y hotel", "months": "Vocabulario ampliado", "focus": "Aeropuerto, transporte, alojamiento y frases clave para viajar sin estrés", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes moverte por un aeropuerto, reservar un hotel y resolver imprevistos durante un viaje.", "audioGroups": [{"label": "Aeropuerto y transporte", "items": [{"hanzi": "机场", "pinyin": "jīchǎng", "es": "aeropuerto"}, {"hanzi": "飞机", "pinyin": "fēijī", "es": "avión"}, {"hanzi": "航班", "pinyin": "hángbān", "es": "vuelo"}, {"hanzi": "护照", "pinyin": "hùzhào", "es": "pasaporte"}, {"hanzi": "票", "pinyin": "piào", "es": "boleto"}, {"hanzi": "行李箱", "pinyin": "xínglixiāng", "es": "maleta"}, {"hanzi": "火车", "pinyin": "huǒchē", "es": "tren"}, {"hanzi": "公交车", "pinyin": "gōngjiāochē", "es": "autobús"}, {"hanzi": "车站", "pinyin": "chēzhàn", "es": "estación"}, {"hanzi": "入口", "pinyin": "rùkǒu", "es": "entrada"}, {"hanzi": "出口", "pinyin": "chūkǒu", "es": "salida"}]}, {"label": "Hotel y alojamiento", "items": [{"hanzi": "酒店", "pinyin": "jiǔdiàn", "es": "hotel"}, {"hanzi": "预订", "pinyin": "yùdìng", "es": "reserva"}, {"hanzi": "房间", "pinyin": "fángjiān", "es": "habitación"}, {"hanzi": "钥匙", "pinyin": "yàoshi", "es": "llave"}, {"hanzi": "毛巾", "pinyin": "máojīn", "es": "toalla"}, {"hanzi": "空调", "pinyin": "kōngtiáo", "es": "aire acondicionado"}, {"hanzi": "含早餐", "pinyin": "hán zǎocān", "es": "desayuno incluido"}]}, {"label": "Frases de viaje", "items": [{"hanzi": "车站在哪里？", "pinyin": "chēzhàn zài nǎlǐ?", "es": "¿Dónde está la estación?"}, {"hanzi": "请给我一张票", "pinyin": "qǐng gěi wǒ yì zhāng piào", "es": "Un boleto, por favor"}, {"hanzi": "火车几点开？", "pinyin": "huǒchē jǐ diǎn kāi?", "es": "¿A qué hora sale el tren?"}, {"hanzi": "我的行李丢了", "pinyin": "wǒ de xíngli diū le", "es": "Perdí mi maleta"}, {"hanzi": "一晚多少钱？", "pinyin": "yì wǎn duōshao qián?", "es": "¿Cuánto cuesta la noche?"}, {"hanzi": "房间里有无线网吗？", "pinyin": "fángjiān lǐ yǒu wúxiànwǎng ma?", "es": "¿Hay wifi en la habitación?"}]}]}, {"title": "Trabajo y oficina", "months": "Vocabulario ampliado", "focus": "Palabras y frases para moverte en un entorno laboral con seguridad", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes hablar de tu trabajo, pedir ayuda a un colega y organizar una reunión.", "audioGroups": [{"label": "Oficina y empresa", "items": [{"hanzi": "老板", "pinyin": "lǎobǎn", "es": "jefe"}, {"hanzi": "同事", "pinyin": "tóngshì", "es": "compañero de trabajo"}, {"hanzi": "公司", "pinyin": "gōngsī", "es": "empresa"}, {"hanzi": "会议", "pinyin": "huìyì", "es": "reunión"}, {"hanzi": "电子邮件", "pinyin": "diànzǐ yóujiàn", "es": "correo electrónico"}, {"hanzi": "电脑", "pinyin": "diànnǎo", "es": "computadora"}, {"hanzi": "打印机", "pinyin": "dǎyìnjī", "es": "impresora"}, {"hanzi": "合同", "pinyin": "hétong", "es": "contrato"}, {"hanzi": "工资", "pinyin": "gōngzī", "es": "sueldo"}, {"hanzi": "时间表", "pinyin": "shíjiānbiǎo", "es": "horario"}, {"hanzi": "假期", "pinyin": "jiàqī", "es": "vacaciones"}, {"hanzi": "面试", "pinyin": "miànshì", "es": "entrevista de trabajo"}]}, {"label": "Frases de trabajo", "items": [{"hanzi": "我有一个会议", "pinyin": "wǒ yǒu yí gè huìyì", "es": "Tengo una reunión"}, {"hanzi": "我在家工作", "pinyin": "wǒ zài jiā gōngzuò", "es": "Trabajo desde casa"}, {"hanzi": "你能把文件发给我吗？", "pinyin": "nǐ néng bǎ wénjiàn fā gěi wǒ ma?", "es": "¿Puedes enviarme el archivo?"}, {"hanzi": "我会晚一点到", "pinyin": "wǒ huì wǎn yìdiǎn dào", "es": "Llego un poco tarde"}, {"hanzi": "我有个问题", "pinyin": "wǒ yǒu ge wèntí", "es": "Tengo una pregunta"}, {"hanzi": "我来处理", "pinyin": "wǒ lái chǔlǐ", "es": "Yo me encargo"}, {"hanzi": "你能帮我吗？", "pinyin": "nǐ néng bāng wǒ ma?", "es": "¿Puedes ayudarme?"}, {"hanzi": "我今天早点下班", "pinyin": "wǒ jīntiān zǎodiǎn xiàbān", "es": "Hoy salgo temprano"}, {"hanzi": "我在找工作", "pinyin": "wǒ zài zhǎo gōngzuò", "es": "Estoy buscando trabajo"}]}]}, {"title": "Salud y farmacia", "months": "Vocabulario ampliado", "focus": "Partes del cuerpo, síntomas, medicinas y frases para explicar cómo te sientes", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes describir un malestar, entender una indicación básica y pedir ayuda médica con claridad.", "audioGroups": [{"label": "Cuerpo: más partes", "items": [{"hanzi": "手臂", "pinyin": "shǒubì", "es": "brazo"}, {"hanzi": "腿", "pinyin": "tuǐ", "es": "pierna"}, {"hanzi": "膝盖", "pinyin": "xīgài", "es": "rodilla"}, {"hanzi": "肩膀", "pinyin": "jiānbǎng", "es": "hombro"}, {"hanzi": "脖子", "pinyin": "bózi", "es": "cuello"}, {"hanzi": "手指", "pinyin": "shǒuzhǐ", "es": "dedo"}, {"hanzi": "脸", "pinyin": "liǎn", "es": "cara"}, {"hanzi": "喉咙", "pinyin": "hóulong", "es": "garganta"}, {"hanzi": "皮肤", "pinyin": "pífū", "es": "piel"}, {"hanzi": "骨头", "pinyin": "gǔtou", "es": "hueso"}, {"hanzi": "胸", "pinyin": "xiōng", "es": "pecho"}, {"hanzi": "指甲", "pinyin": "zhǐjia", "es": "uña"}]}, {"label": "Síntomas y medicinas", "items": [{"hanzi": "药", "pinyin": "yào", "es": "medicina"}, {"hanzi": "药片", "pinyin": "yàopiàn", "es": "pastilla"}, {"hanzi": "疼痛", "pinyin": "téngtòng", "es": "dolor"}, {"hanzi": "咳嗽", "pinyin": "késou", "es": "tos"}, {"hanzi": "过敏", "pinyin": "guòmǐn", "es": "alergia"}, {"hanzi": "伤口", "pinyin": "shāngkǒu", "es": "herida"}, {"hanzi": "牙医", "pinyin": "yáyī", "es": "dentista"}, {"hanzi": "药店", "pinyin": "yàodiàn", "es": "farmacia"}, {"hanzi": "医院", "pinyin": "yīyuàn", "es": "hospital"}, {"hanzi": "医疗保险", "pinyin": "yīliáo bǎoxiǎn", "es": "seguro médico"}]}, {"label": "Frases de salud", "items": [{"hanzi": "我肚子疼", "pinyin": "wǒ dùzi téng", "es": "Me duele el estómago"}, {"hanzi": "我喉咙疼", "pinyin": "wǒ hóulong téng", "es": "Me duele la garganta"}, {"hanzi": "我咳嗽", "pinyin": "wǒ késou", "es": "Tengo tos"}, {"hanzi": "我需要看医生", "pinyin": "wǒ xūyào kàn yīshēng", "es": "Necesito ver a un médico"}, {"hanzi": "我头晕", "pinyin": "wǒ tóuyūn", "es": "Tengo mareos"}, {"hanzi": "我感觉好多了", "pinyin": "wǒ gǎnjué hǎo duō le", "es": "Me siento mejor"}, {"hanzi": "一天几次？", "pinyin": "yì tiān jǐ cì?", "es": "¿Cuántas veces al día?"}, {"hanzi": "严重吗？", "pinyin": "yánzhòng ma?", "es": "¿Es grave?"}]}]}, {"title": "Compras y dinero", "months": "Vocabulario ampliado", "focus": "Pagos, bancos, ropa y frases para comprar con confianza", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes pagar, pedir el cambio, probarte ropa y resolver dudas de talla o precio.", "audioGroups": [{"label": "Dinero y pagos", "items": [{"hanzi": "钱", "pinyin": "qián", "es": "dinero"}, {"hanzi": "现金", "pinyin": "xiànjīn", "es": "efectivo"}, {"hanzi": "卡", "pinyin": "kǎ", "es": "tarjeta"}, {"hanzi": "价格", "pinyin": "jiàgé", "es": "precio"}, {"hanzi": "找零", "pinyin": "zhǎolíng", "es": "cambio (vuelto)"}, {"hanzi": "收据", "pinyin": "shōujù", "es": "recibo"}, {"hanzi": "银行", "pinyin": "yínháng", "es": "banco"}, {"hanzi": "自动取款机", "pinyin": "zìdòng qǔkuǎnjī", "es": "cajero automático"}, {"hanzi": "商店", "pinyin": "shāngdiàn", "es": "tienda"}, {"hanzi": "袋子", "pinyin": "dàizi", "es": "bolsa"}]}, {"label": "Ropa y probarse", "items": [{"hanzi": "T恤", "pinyin": "tīxù", "es": "camiseta"}, {"hanzi": "外套", "pinyin": "wàitào", "es": "abrigo"}, {"hanzi": "包", "pinyin": "bāo", "es": "bolso"}, {"hanzi": "腰带", "pinyin": "yāodài", "es": "cinturón"}, {"hanzi": "尺码", "pinyin": "chǐmǎ", "es": "talla"}, {"hanzi": "试衣间", "pinyin": "shìyījiān", "es": "probador"}, {"hanzi": "我可以试穿吗？", "pinyin": "wǒ kěyǐ shìchuān ma?", "es": "¿Puedo probármelo?"}, {"hanzi": "有别的尺码吗？", "pinyin": "yǒu bié de chǐmǎ ma?", "es": "¿Tiene otra talla?"}, {"hanzi": "很合适", "pinyin": "hěn héshì", "es": "Me queda bien"}, {"hanzi": "我要这个", "pinyin": "wǒ yào zhège", "es": "Me lo llevo"}]}]}, {"title": "Ciudad y lugares", "months": "Vocabulario ampliado", "focus": "Lugares de la ciudad y direcciones para orientarte y moverte sin perderte", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes preguntar dónde queda un lugar y entender indicaciones básicas para llegar.", "audioGroups": [{"label": "Lugares de la ciudad", "items": [{"hanzi": "街道", "pinyin": "jiēdào", "es": "calle"}, {"hanzi": "广场", "pinyin": "guǎngchǎng", "es": "plaza"}, {"hanzi": "公园", "pinyin": "gōngyuán", "es": "parque"}, {"hanzi": "博物馆", "pinyin": "bówùguǎn", "es": "museo"}, {"hanzi": "电影院", "pinyin": "diànyǐngyuàn", "es": "cine"}, {"hanzi": "餐厅", "pinyin": "cāntīng", "es": "restaurante"}, {"hanzi": "图书馆", "pinyin": "túshūguǎn", "es": "biblioteca"}, {"hanzi": "海滩", "pinyin": "hǎitān", "es": "playa"}, {"hanzi": "学校", "pinyin": "xuéxiào", "es": "escuela"}, {"hanzi": "市场", "pinyin": "shìchǎng", "es": "mercado"}, {"hanzi": "桥", "pinyin": "qiáo", "es": "puente"}]}, {"label": "Direcciones", "items": [{"hanzi": "右边", "pinyin": "yòubian", "es": "a la derecha"}, {"hanzi": "左边", "pinyin": "zuǒbian", "es": "a la izquierda"}, {"hanzi": "近", "pinyin": "jìn", "es": "cerca"}, {"hanzi": "远", "pinyin": "yuǎn", "es": "lejos"}, {"hanzi": "拐角", "pinyin": "guǎijiǎo", "es": "esquina"}, {"hanzi": "红绿灯", "pinyin": "hónglǜdēng", "es": "semáforo"}, {"hanzi": "地图", "pinyin": "dìtú", "es": "mapa"}, {"hanzi": "旁边", "pinyin": "pángbiān", "es": "al lado de"}]}]}, {"title": "Tecnología y redes", "months": "Vocabulario ampliado", "focus": "Dispositivos, apps y frases para mantenerte conectado", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes pedir un número, enviar fotos, resolver un problema con el celular y coordinar por mensajes.", "audioGroups": [{"label": "Dispositivos y apps", "items": [{"hanzi": "手机", "pinyin": "shǒujī", "es": "celular"}, {"hanzi": "充电器", "pinyin": "chōngdiànqì", "es": "cargador"}, {"hanzi": "电池", "pinyin": "diànchí", "es": "batería"}, {"hanzi": "屏幕", "pinyin": "píngmù", "es": "pantalla"}, {"hanzi": "应用", "pinyin": "yìngyòng", "es": "aplicación"}, {"hanzi": "网络", "pinyin": "wǎngluò", "es": "internet"}, {"hanzi": "消息", "pinyin": "xiāoxi", "es": "mensaje"}, {"hanzi": "照片", "pinyin": "zhàopiàn", "es": "foto"}, {"hanzi": "视频", "pinyin": "shìpín", "es": "video"}, {"hanzi": "账号", "pinyin": "zhànghào", "es": "cuenta"}]}, {"label": "Frases para estar conectado", "items": [{"hanzi": "我给你发消息", "pinyin": "wǒ gěi nǐ fā xiāoxi", "es": "Te mando un mensaje"}, {"hanzi": "给我发张照片", "pinyin": "gěi wǒ fā zhāng zhàopiàn", "es": "Mándame una foto"}, {"hanzi": "能给我你的号码吗？", "pinyin": "néng gěi wǒ nǐ de hàomǎ ma?", "es": "¿Me das tu número?"}, {"hanzi": "你有Instagram吗？", "pinyin": "nǐ yǒu Instagram ma?", "es": "¿Tienes Instagram?"}, {"hanzi": "我待会儿给你打电话", "pinyin": "wǒ dāihuìr gěi nǐ dǎ diànhuà", "es": "Te llamo luego"}, {"hanzi": "我没有网络", "pinyin": "wǒ méiyǒu wǎngluò", "es": "No tengo internet"}, {"hanzi": "手机卡住了", "pinyin": "shǒujī kǎ zhù le", "es": "Se trabó el celular"}, {"hanzi": "下载这个应用", "pinyin": "xiàzǎi zhège yìngyòng", "es": "Descarga la aplicación"}]}]}, {"title": "Tiempo y calendario", "months": "Vocabulario ampliado", "focus": "Meses, estaciones, unidades de tiempo y frecuencia para hablar de fechas y rutinas", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes decir en qué mes naciste, hablar de estaciones y contar con qué frecuencia haces algo.", "audioGroups": [{"label": "Meses del año", "items": [{"hanzi": "一月", "pinyin": "yīyuè", "es": "enero"}, {"hanzi": "二月", "pinyin": "èryuè", "es": "febrero"}, {"hanzi": "三月", "pinyin": "sānyuè", "es": "marzo"}, {"hanzi": "四月", "pinyin": "sìyuè", "es": "abril"}, {"hanzi": "五月", "pinyin": "wǔyuè", "es": "mayo"}, {"hanzi": "六月", "pinyin": "liùyuè", "es": "junio"}, {"hanzi": "七月", "pinyin": "qīyuè", "es": "julio"}, {"hanzi": "八月", "pinyin": "bāyuè", "es": "agosto"}, {"hanzi": "九月", "pinyin": "jiǔyuè", "es": "septiembre"}, {"hanzi": "十月", "pinyin": "shíyuè", "es": "octubre"}, {"hanzi": "十一月", "pinyin": "shíyīyuè", "es": "noviembre"}, {"hanzi": "十二月", "pinyin": "shí'èryuè", "es": "diciembre"}]}, {"label": "Estaciones y unidades de tiempo", "items": [{"hanzi": "春天", "pinyin": "chūntiān", "es": "primavera"}, {"hanzi": "夏天", "pinyin": "xiàtiān", "es": "verano"}, {"hanzi": "秋天", "pinyin": "qiūtiān", "es": "otoño"}, {"hanzi": "冬天", "pinyin": "dōngtiān", "es": "invierno"}, {"hanzi": "星期", "pinyin": "xīngqī", "es": "semana"}, {"hanzi": "月", "pinyin": "yuè", "es": "mes"}, {"hanzi": "年", "pinyin": "nián", "es": "año"}, {"hanzi": "小时", "pinyin": "xiǎoshí", "es": "hora"}]}, {"label": "Frecuencia", "items": [{"hanzi": "总是", "pinyin": "zǒngshì", "es": "siempre"}, {"hanzi": "从不", "pinyin": "cóngbù", "es": "nunca"}, {"hanzi": "有时", "pinyin": "yǒushí", "es": "a veces"}, {"hanzi": "每天", "pinyin": "měitiān", "es": "todos los días"}]}]}, {"title": "Hobbies y ocio", "months": "Vocabulario ampliado", "focus": "Música, cine, deportes y frases para hablar de lo que te gusta hacer", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes contar tus aficiones, preguntar por las de otros y conversar sobre series, música y deporte.", "audioGroups": [{"label": "Aficiones", "items": [{"hanzi": "音乐", "pinyin": "yīnyuè", "es": "música"}, {"hanzi": "电影", "pinyin": "diànyǐng", "es": "película"}, {"hanzi": "剧", "pinyin": "jù", "es": "serie"}, {"hanzi": "运动", "pinyin": "yùndòng", "es": "deporte"}, {"hanzi": "足球", "pinyin": "zúqiú", "es": "fútbol"}, {"hanzi": "舞蹈", "pinyin": "wǔdǎo", "es": "baile"}, {"hanzi": "旅行", "pinyin": "lǚxíng", "es": "viaje"}, {"hanzi": "摄影", "pinyin": "shèyǐng", "es": "fotografía"}, {"hanzi": "电子游戏", "pinyin": "diànzǐ yóuxì", "es": "videojuegos"}, {"hanzi": "歌", "pinyin": "gē", "es": "canción"}]}, {"label": "Frases para hablar de tus gustos", "items": [{"hanzi": "我喜欢音乐", "pinyin": "wǒ xǐhuan yīnyuè", "es": "Me gusta la música"}, {"hanzi": "我踢足球", "pinyin": "wǒ tī zúqiú", "es": "Juego al fútbol"}, {"hanzi": "我很爱旅行", "pinyin": "wǒ hěn ài lǚxíng", "es": "Me encanta viajar"}, {"hanzi": "我看剧", "pinyin": "wǒ kàn jù", "es": "Veo series"}, {"hanzi": "我听音乐", "pinyin": "wǒ tīng yīnyuè", "es": "Escucho música"}, {"hanzi": "我去跑步", "pinyin": "wǒ qù pǎobù", "es": "Salgo a correr"}, {"hanzi": "你看了什么电影？", "pinyin": "nǐ kàn le shénme diànyǐng?", "es": "¿Qué película viste?"}, {"hanzi": "我最喜欢的爱好是…", "pinyin": "wǒ zuì xǐhuan de àihào shì…", "es": "Mi pasatiempo favorito es..."}]}]}, {"title": "Verbos y conectores", "months": "Vocabulario ampliado", "focus": "Los verbos y conectores que más te sacan de apuros para armar frases propias", "tasks": [{"name": "Repasa una categoría cada día", "time": "5 min/día", "tool": "Esta página"}, {"name": "Usa 3 frases nuevas esta semana", "time": "Meta", "tool": "Auto-evaluación"}], "milestone": "Puedes enlazar ideas con también, antes, después o por ejemplo, y usar verbos clave sin dudar.", "audioGroups": [{"label": "Verbos clave", "items": [{"hanzi": "知道", "pinyin": "zhīdào", "es": "saber"}, {"hanzi": "明白", "pinyin": "míngbai", "es": "entender"}, {"hanzi": "需要", "pinyin": "xūyào", "es": "necesitar"}, {"hanzi": "等", "pinyin": "děng", "es": "esperar"}, {"hanzi": "打开", "pinyin": "dǎkāi", "es": "abrir"}, {"hanzi": "关", "pinyin": "guān", "es": "cerrar"}, {"hanzi": "开始", "pinyin": "kāishǐ", "es": "empezar"}, {"hanzi": "结束", "pinyin": "jiéshù", "es": "terminar"}, {"hanzi": "帮助", "pinyin": "bāngzhù", "es": "ayudar"}, {"hanzi": "打电话", "pinyin": "dǎ diànhuà", "es": "llamar"}, {"hanzi": "付钱", "pinyin": "fùqián", "es": "pagar"}, {"hanzi": "找到", "pinyin": "zhǎodào", "es": "encontrar"}, {"hanzi": "丢", "pinyin": "diū", "es": "perder"}, {"hanzi": "记得", "pinyin": "jìde", "es": "recordar"}, {"hanzi": "忘记", "pinyin": "wàngjì", "es": "olvidar"}, {"hanzi": "换", "pinyin": "huàn", "es": "cambiar"}]}, {"label": "Conectores", "items": [{"hanzi": "也", "pinyin": "yě", "es": "también"}, {"hanzi": "还", "pinyin": "hái", "es": "todavía"}, {"hanzi": "已经", "pinyin": "yǐjīng", "es": "ya"}, {"hanzi": "以前", "pinyin": "yǐqián", "es": "antes"}, {"hanzi": "以后", "pinyin": "yǐhòu", "es": "después"}, {"hanzi": "那么", "pinyin": "nàme", "es": "entonces"}, {"hanzi": "例如", "pinyin": "lìrú", "es": "por ejemplo"}, {"hanzi": "也许", "pinyin": "yěxǔ", "es": "tal vez"}]}]}];
+const PLAN_COUNT = 4;
+const EMOJI = ['🌱','🧱','🚀','🏁','🛒','🎉','💬','🏠','🔤','📚','🍽️','✈️','💼','🩺','🛍️','🏙️','📱','📅','🎧','🔗'];
+const MASTERY = 3;
+const KEY = CFG.storage + '-progress-v1';
+const K_THEME = CFG.storage + '-theme', K_STREAK = CFG.storage + '-streak', K_PHASE = CFG.storage + '-phase', K_RATE = CFG.storage + '-rate';
+
+function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\p{L}\p{N}\p{M}]+/gu,' ').trim();}
+function store(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function fetchStore(k){try{return localStorage.getItem(k)}catch(e){return null}}
+
+/* ---------- state ---------- */
+let state = {};
+try{ state = JSON.parse(fetchStore(KEY) || '{}') || {}; }catch(e){ state = {}; }
+function saveState(){ store(KEY, JSON.stringify(state)); }
+
+const ITEMS = [];        // flat list of all vocabulary items
+const PHASE_ITEMS = [];  // ids per phase
+data.forEach((p, pi) => {
+  PHASE_ITEMS[pi] = [];
+  p.tasks.forEach((t, ti) => { const id = `t-${pi}-${ti}`; if(!(id in state)) state[id] = false; });
+  const add = (a, id, gi) => { if(!(id in state)) state[id] = 0; ITEMS.push({id, pi, gi, ...a}); PHASE_ITEMS[pi].push(id); };
+  if(p.audioGroups) p.audioGroups.forEach((g, gi) => g.items.forEach((a, ai) => add(a, `a-${pi}-${gi}-${ai}`, gi)));
+  else p.audio.forEach((a, ai) => add(a, `a-${pi}-${ai}`, 0));
+});
+const BY_ID = Object.fromEntries(ITEMS.map(i => [i.id, i]));
+
+/* ---------- render ---------- */
+let activePhase = Math.min(parseInt(fetchStore(K_PHASE) || '0', 10) || 0, data.length - 1);
+let filterMode = 'all';
+
+function cardHTML(it){
+  const t = escapeHtml(it.hanzi);
+  return `<article class="card" id="card-${it.id}" data-id="${it.id}" data-s="${escapeHtml(norm(it.hanzi + ' ' + it.pinyin + ' ' + it.es))}">
+    <div>
+      <div class="target ${CFG.cjk ? 'cjk' : ''}" lang="${CFG.code}">${it.hanzi}</div>
+      <div class="roman">${it.pinyin}</div>
+      <div class="gloss">${it.es}</div>
+    </div>
+    <div class="btns">
+      <button class="rbtn play" data-text="${t}" aria-label="Escuchar" onclick="speak(this.dataset.text, this)">▶</button>
+      <button class="rbtn mic" data-text="${t}" data-id="${it.id}" aria-label="Practicar pronunciación" onclick="startRecognition(this)">🎤</button>
+    </div>
+    <div class="foot"><div class="dots" id="dots-${it.id}"></div><span class="badge-ok">✓ Dominada</span><div class="fb" id="fb-${it.id}" role="status"></div></div>
+  </article>`;
+}
+
+function buildAll(){
+  const planBox = document.getElementById('chipsPlan'), topicBox = document.getElementById('chipsTopics');
+  const container = document.getElementById('phasesContainer');
+  data.forEach((p, pi) => {
+    const chip = document.createElement('button');
+    chip.className = 'chip'; chip.id = 'chip-' + pi;
+    chip.innerHTML = `<span class="em">${EMOJI[pi] || '📘'}</span>${p.title}<small id="cc-${pi}"></small>`;
+    chip.onclick = () => { clearSearch(); showPhase(pi, true); };
+    (pi < PLAN_COUNT ? planBox : topicBox).appendChild(chip);
+
+    let tasks = '';
+    p.tasks.forEach((t, ti) => {
+      const id = `t-${pi}-${ti}`;
+      tasks += `<div class="task"><input type="checkbox" id="${id}" ${state[id] ? 'checked' : ''} onchange="toggleTask('${id}', this.checked)">
+        <div><div class="tn ${state[id] ? 'done' : ''}" id="tn-${id}">${t.name}</div><div class="tm">${t.time}<span class="tag">${t.tool}</span></div></div></div>`;
+    });
+
+    let cards = '';
+    if(p.audioGroups){
+      p.audioGroups.forEach((g, gi) => {
+        cards += `<div class="group"><div class="group-label">${g.label}</div><div class="grid">`;
+        g.items.forEach((a, ai) => { cards += cardHTML(BY_ID[`a-${pi}-${gi}-${ai}`]); });
+        cards += `</div></div>`;
+      });
+    } else {
+      cards += `<div class="group"><div class="grid">`;
+      p.audio.forEach((a, ai) => { cards += cardHTML(BY_ID[`a-${pi}-${ai}`]); });
+      cards += `</div></div>`;
+    }
+
+    const sec = document.createElement('section');
+    sec.className = 'phase'; sec.id = 'phase-' + pi;
+    sec.innerHTML = `
+      <div class="phase-head"><h2>${EMOJI[pi] || ''} ${p.title}</h2><span class="months">${p.months}</span></div>
+      <div class="phase-focus">${p.focus}</div>
+      <div class="pbar-l"><span id="pl-${pi}"></span><span id="pp-${pi}"></span></div>
+      <div class="pbar"><i id="pb-${pi}" style="width:0"></i></div>
+      <details class="habits"><summary>Hábitos y meta de esta etapa <span class="chev">▸</span></summary>
+        ${tasks}<p class="milestone"><b>Meta —</b> ${p.milestone}</p></details>
+      <div class="phase-cards">${cards}</div>
+      <div class="empty" id="empty-${pi}" hidden><div class="big">🔎</div>No hay tarjetas con este filtro.</div>`;
+    container.appendChild(sec);
+  });
+  ITEMS.forEach(it => renderDots(it.id));
+}
+
+function renderDots(id){
+  const el = document.getElementById('dots-' + id); if(!el) return;
+  const n = Math.min(state[id] || 0, MASTERY);
+  let h = ''; for(let i = 0; i < MASTERY; i++) h += `<span class="dot ${i < n ? 'f' : ''}"></span>`;
+  el.innerHTML = h;
+  document.getElementById('card-' + id).classList.toggle('mastered', n >= MASTERY);
+}
+
+/* ---------- navigation & filters ---------- */
+function showPhase(i, scroll){
+  activePhase = i; store(K_PHASE, String(i));
+  applyFilters();
+  const chip = document.getElementById('chip-' + i);
+  if(chip) chip.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+  if(scroll){ const el = document.getElementById('phase-' + i); if(el) window.scrollTo({top: el.offsetTop - 130, behavior:'smooth'}); }
+}
+
+const searchBox = document.getElementById('searchBox'), searchClr = document.getElementById('searchClr');
+searchBox.addEventListener('input', () => { searchClr.hidden = !searchBox.value; applyFilters(); });
+searchClr.onclick = () => { clearSearch(); searchBox.focus(); };
+function clearSearch(){ searchBox.value = ''; searchClr.hidden = true; applyFilters(); }
+document.getElementById('seg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  filterMode = b.dataset.f;
+  document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('on', x === b));
+  applyFilters();
+});
+
+function applyFilters(){
+  const q = norm(searchBox.value);
+  const searching = q.length > 0;
+  document.body.classList.toggle('searching', searching);
+  data.forEach((p, pi) => {
+    const sec = document.getElementById('phase-' + pi);
+    let vis = 0;
+    sec.querySelectorAll('.group').forEach(g => {
+      let gv = 0;
+      g.querySelectorAll('.card').forEach(c => {
+        const done = (state[c.dataset.id] || 0) >= MASTERY;
+        const ok = (!searching || c.dataset.s.includes(q)) && (filterMode === 'all' || (filterMode === 'done' ? done : !done));
+        c.hidden = !ok; if(ok) gv++;
+      });
+      g.hidden = gv === 0; vis += gv;
+    });
+    const shown = searching ? vis > 0 : pi === activePhase;
+    sec.classList.toggle('show', shown);
+    document.getElementById('empty-' + pi).hidden = !(shown && vis === 0 && !searching);
+    sec.querySelector('.habits').hidden = searching;
+  });
+  if(searching && !data.some((p, pi) => document.getElementById('phase-' + pi).classList.contains('show'))){
+    let e = document.getElementById('noResults');
+    if(!e){ e = document.createElement('div'); e.id = 'noResults'; e.className = 'empty'; e.innerHTML = '<div class="big">🔎</div>Sin resultados. Prueba con otra palabra.'; document.getElementById('phasesContainer').appendChild(e); }
+    e.hidden = false;
+  } else { const e = document.getElementById('noResults'); if(e) e.hidden = true; }
+  data.forEach((p, pi) => document.getElementById('chip-' + pi).classList.toggle('active', pi === activePhase));
+}
+
+/* ---------- progress ---------- */
+function phaseStats(pi){
+  const ids = PHASE_ITEMS[pi];
+  const m = ids.filter(id => (state[id] || 0) >= MASTERY).length;
+  return {m, n: ids.length};
+}
+function updateProgress(){
+  const tKeys = Object.keys(state).filter(k => k[0] === 't'), aKeys = Object.keys(state).filter(k => k[0] === 'a');
+  const tDone = tKeys.filter(k => state[k]).length;
+  const aUnits = aKeys.reduce((s, k) => s + Math.min(state[k], MASTERY) / MASTERY, 0);
+  const total = tKeys.length + aKeys.length;
+  const pct = total ? Math.round(((tDone + aUnits) / total) * 100) : 0;
+  document.getElementById('ringPct').textContent = pct;
+  document.getElementById('ringBar').style.strokeDashoffset = (326.7 * (1 - pct / 100)).toFixed(1);
+  const mastered = aKeys.filter(k => state[k] >= MASTERY).length;
+  document.getElementById('stMastered').textContent = mastered + '/' + aKeys.length;
+  document.getElementById('stTasks').textContent = tDone + '/' + tKeys.length;
+  data.forEach((p, pi) => {
+    const s = phaseStats(pi);
+    document.getElementById('cc-' + pi).textContent = s.m + '/' + s.n;
+    document.getElementById('chip-' + pi).classList.toggle('complete', s.m === s.n && s.n > 0);
+    document.getElementById('pb-' + pi).style.width = (s.n ? Math.round(s.m / s.n * 100) : 0) + '%';
+    document.getElementById('pl-' + pi).textContent = s.m + ' de ' + s.n + ' dominadas';
+    document.getElementById('pp-' + pi).textContent = (s.n ? Math.round(s.m / s.n * 100) : 0) + '%';
+  });
+}
+function toggleTask(id, v){
+  state[id] = v; document.getElementById('tn-' + id).classList.toggle('done', v);
+  saveState(); updateProgress();
+}
+function toast(msg){
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), 2200);
+}
+function registerPlay(id){
+  const was = (state[id] || 0) >= MASTERY;
+  state[id] = Math.min((state[id] || 0) + 1, MASTERY);
+  saveState(); renderDots(id); updateProgress(); bumpStreak();
+  if(!was && state[id] >= MASTERY){ celebrate(id); }
+  if(filterMode !== 'all') setTimeout(applyFilters, 700);
+}
+function celebrate(id){
+  const c = document.getElementById('card-' + id);
+  if(c){ c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 700); }
+  toast('¡Dominada! 🎉 ' + (BY_ID[id] ? BY_ID[id].hanzi : ''));
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1175, 1568].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f; o.type = 'sine';
+      const t = ctx.currentTime + i * .09;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.15, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .25);
+      o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + .26);
+    });
+  }catch(e){}
+}
+
+/* ---------- theme & streak ---------- */
+function toggleTheme(){
+  const d = document.body.classList.toggle('dark');
+  document.getElementById('themeToggle').textContent = d ? '☀️' : '🌙';
+  store(K_THEME, d ? 'dark' : 'light');
+}
+function initTheme(){
+  let s = fetchStore(K_THEME);
+  if(s === null && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) s = 'dark';
+  if(s === 'dark'){ document.body.classList.add('dark'); document.getElementById('themeToggle').textContent = '☀️'; }
+}
+let streak = {count: 0, lastDate: null};
+try{ streak = JSON.parse(fetchStore(K_STREAK)) || streak; }catch(e){}
+function dayStr(offset){ const d = new Date(Date.now() - (offset || 0) * 86400000); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function bumpStreak(){
+  const today = dayStr(0);
+  if(streak.lastDate !== today){
+    streak.count = streak.lastDate === dayStr(1) ? streak.count + 1 : 1;
+    streak.lastDate = today; store(K_STREAK, JSON.stringify(streak));
+  }
+  renderStreak();
+}
+function renderStreak(){
+  const alive = streak.lastDate === dayStr(0) || streak.lastDate === dayStr(1);
+  document.getElementById('stStreak').textContent = alive ? streak.count : 0;
+}
+
+/* ---------- voices & speech ---------- */
+let voicesReady = false, voiceList = [];
+function loadVoices(){
+  return new Promise(res => {
+    if(!('speechSynthesis' in window)){ res([]); return; }
+    const v = speechSynthesis.getVoices(); if(v && v.length){ res(v); return; }
+    let done = false;
+    speechSynthesis.onvoiceschanged = () => { if(done) return; done = true; res(speechSynthesis.getVoices()); };
+    setTimeout(() => { if(done) return; done = true; res(speechSynthesis.getVoices()); }, 1500);
+  });
+}
+function langOf(v){ return (v.lang || '').replace('_', '-'); }
+function matchVoices(list){
+  const exact = list.filter(v => langOf(v).toLowerCase() === CFG.code.toLowerCase());
+  const pref = list.filter(v => langOf(v).toLowerCase().startsWith(CFG.prefix) && !exact.includes(v));
+  return exact.concat(pref);
+}
+async function ensureVoices(){
+  if(voicesReady) return voiceList;
+  voiceList = await loadVoices(); voicesReady = true;
+  const m = matchVoices(voiceList), st = document.getElementById('voiceStatus');
+  if(m.length){ st.textContent = `Voz en ${CFG.nameLower} detectada: ${m[0].name} (${m.length} disponible${m.length > 1 ? 's' : ''})`; st.className = 'vstatus ok'; }
+  else { st.textContent = `No se encontró una voz en ${CFG.nameLower}. Elige una abajo o instala una: Android → Ajustes > Sistema > Idiomas > Síntesis de voz; iPhone → Ajustes > Accesibilidad > Contenido hablado > Voces.`; st.className = 'vstatus warn'; }
+  populatePicker(m);
+  return voiceList;
+}
+function populatePicker(m){
+  const sel = document.getElementById('voicePicker'), row = document.getElementById('voicePickerRow');
+  if(!voiceList.length) return;
+  row.hidden = false; sel.innerHTML = '';
+  voiceList.forEach((v, i) => { const o = document.createElement('option'); o.value = i; o.textContent = `${v.name} (${v.lang})`; sel.appendChild(o); });
+  const saved = fetchStore(KEY + '-voice');
+  let idx = 0;
+  if(saved){ const k = voiceList.findIndex(v => v.name === saved); if(k >= 0) idx = k; }
+  else if(m.length) idx = voiceList.indexOf(m[0]);
+  sel.value = String(idx);
+}
+function onVoicePicked(i){ const v = voiceList[parseInt(i, 10)]; if(v) store(KEY + '-voice', v.name); }
+function pickedVoice(){ const s = document.getElementById('voicePicker'); return (s && s.value !== '') ? voiceList[parseInt(s.value, 10)] || null : null; }
+function chosenVoice(){ return pickedVoice() || matchVoices(voiceList)[0] || null; }
+let rate = parseFloat(fetchStore(K_RATE)) || 0.85;
+const rateSlider = document.getElementById('rateSlider');
+rateSlider.value = rate; document.getElementById('rateVal').textContent = rate.toFixed(2);
+rateSlider.oninput = () => { rate = parseFloat(rateSlider.value); document.getElementById('rateVal').textContent = rate.toFixed(2); store(K_RATE, String(rate)); };
+
+const lastSpoken = {};
+async function speak(text, btn){
+  const now = Date.now();
+  if(lastSpoken[text] && now - lastSpoken[text] < 700) return;
+  lastSpoken[text] = now;
+  document.querySelectorAll('.rbtn.playing').forEach(b => b.classList.remove('playing'));
+  if(btn) btn.classList.add('playing');
+  const stop = () => { if(btn) btn.classList.remove('playing'); };
+  await ensureVoices();
+  const v = chosenVoice();
+  if(v){ say(text, v, stop); return; }
+  const audio = new Audio('https://translate.googleapis.com/translate_tts?ie=UTF-8&q=' + encodeURIComponent(text) + '&tl=' + CFG.code + '&client=gtx');
+  audio.onended = stop;
+  audio.onerror = () => { stop(); toast('No hay voz disponible. Revisa ⚙️ Ajustes.'); };
+  try{ await audio.play(); }catch(e){ stop(); toast('No hay voz disponible. Revisa ⚙️ Ajustes.'); }
+}
+function say(text, voice, done){
+  if(!('speechSynthesis' in window)){ done(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = voice.lang || CFG.code; u.voice = voice; u.rate = rate; u.volume = 1;
+  u.onend = done; u.onerror = done;
+  speechSynthesis.resume();
+  setTimeout(() => speechSynthesis.speak(u), 50);
+}
+function testVoice(){
+  if(!('speechSynthesis' in window)){ toast('Este navegador no soporta voz.'); return; }
+  const first = BY_ID[ITEMS[0].id];
+  const v = chosenVoice();
+  if(v) say(first.hanzi, v, () => {}); else toast('No hay voz instalada para este idioma.');
+}
+
+/* ---------- pronunciation check ---------- */
+function cmp(s){ return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N}\p{M}]+/gu, ''); }
+function lev(a, b){
+  const m = a.length, n = b.length; if(!m) return n; if(!n) return m;
+  let prev = Array.from({length: n + 1}, (_, j) => j);
+  for(let i = 1; i <= m; i++){
+    const cur = [i];
+    for(let j = 1; j <= n; j++) cur[j] = a[i - 1] === b[j - 1] ? prev[j - 1] : 1 + Math.min(prev[j], cur[j - 1], prev[j - 1]);
+    prev = cur;
+  }
+  return prev[n];
+}
+function closeEnough(said, expected){
+  const s = cmp(said), e = cmp(expected);
+  if(!s) return false; if(s === e) return true;
+  return lev(s, e) <= Math.max(1, Math.ceil(e.length * 0.25));
+}
+function setFb(id, msg, cls, html){
+  const f = document.getElementById('fb-' + id); if(!f) return;
+  if(html) f.innerHTML = msg; else f.textContent = msg;
+  f.className = 'fb ' + (cls || '');
+}
+function manualPractice(id){ setFb(id, '✔ Práctica registrada (modo manual)', 'correct'); registerPlay(id); }
+function startRecognition(btn){
+  const id = btn.dataset.id, expected = btn.dataset.text;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const manual = `<a onclick="manualPractice('${id}')">Marcar como practicada</a>`;
+  if(!window.isSecureContext){ setFb(id, '⚠️ El micrófono necesita https://. ' + manual, 'incorrect', true); return; }
+  if(!SR){ setFb(id, 'Tu navegador no soporta reconocimiento de voz (prueba Chrome). ' + manual, 'incorrect', true); return; }
+  const r = new SR();
+  r.lang = CFG.code; r.maxAlternatives = 3; r.interimResults = false;
+  btn.classList.add('listening'); setFb(id, '🎤 Escuchando… di la frase', '');
+  r.onresult = e => {
+    const alts = Array.from(e.results[0]).map(x => x.transcript);
+    if(alts.some(a => closeEnough(a, expected))){ setFb(id, '✅ ¡Correcto! — ' + alts[0], 'correct'); registerPlay(id); }
+    else setFb(id, '❌ Se entendió: “' + alts[0] + '” — intenta de nuevo', 'incorrect');
+  };
+  r.onerror = e => {
+    btn.classList.remove('listening');
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed') setFb(id, 'Permite el micrófono para usar esta función. ' + manual, 'incorrect', true);
+    else if(e.error === 'no-speech') setFb(id, 'No se detectó voz — intenta de nuevo.', 'incorrect');
+    else setFb(id, 'Error de reconocimiento: ' + e.error + '. ' + manual, 'incorrect', true);
+  };
+  r.onend = () => btn.classList.remove('listening');
+  try{ r.start(); }catch(e){ btn.classList.remove('listening'); }
+}
+
+/* ---------- overlays ---------- */
+function closeOverlays(){ document.querySelectorAll('.overlay').forEach(o => o.classList.remove('open')); quiz = null; flash = null; }
+function openSettings(){ document.getElementById('settingsOv').classList.add('open'); ensureVoices(); }
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeOverlays(); });
+
+/* ---------- quiz ---------- */
+let quiz = null;
+function shuffle(a){ return [...a].sort(() => Math.random() - 0.5); }
+function startQuiz(){
+  const practiced = ITEMS.filter(i => (state[i.id] || 0) > 0);
+  const pool = practiced.length >= 8 ? practiced : ITEMS;
+  quiz = {items: shuffle(pool).slice(0, 8), i: 0, score: 0};
+  document.getElementById('gameOv').classList.add('open'); quizQ();
+}
+function quizQ(){
+  const box = document.getElementById('gameBox'), q = quiz.items[quiz.i];
+  const wrong = shuffle(ITEMS.filter(x => x.es !== q.es)).slice(0, 3).map(x => x.es);
+  const opts = shuffle([q.es, ...wrong]);
+  box.innerHTML = `
+    <div class="sheet-head"><h3>🎲 Examen sorpresa</h3><button class="x" onclick="closeOverlays()" aria-label="Cerrar">✕</button></div>
+    <div class="muted">Pregunta ${quiz.i + 1} de ${quiz.items.length} · ${quiz.score} correctas</div>
+    <div class="qprog"><i style="width:${(quiz.i / quiz.items.length) * 100}%"></i></div>
+    <div class="qbig"><div class="t ${CFG.cjk ? 'cjk' : ''}">${q.hanzi}</div><div class="r">${q.pinyin}</div>
+      <button class="btn" style="margin-top:10px" data-text="${escapeHtml(q.hanzi)}" onclick="speak(this.dataset.text, this)">▶ Escuchar</button></div>
+    ${opts.map(o => `<button class="qopt" data-o="${escapeHtml(o)}" onclick="quizA(this)">${o}</button>`).join('')}`;
+  speak(q.hanzi, null);
+}
+function quizA(btn){
+  const all = btn.parentElement.querySelectorAll('.qopt'), right = quiz.items[quiz.i].es;
+  all.forEach(o => { o.onclick = null; if(o.dataset.o === right) o.classList.add('correct'); });
+  if(btn.dataset.o === right) quiz.score++; else btn.classList.add('wrong');
+  setTimeout(() => { if(!quiz) return; quiz.i++; quiz.i >= quiz.items.length ? quizEnd() : quizQ(); }, 900);
+}
+function quizEnd(){
+  const pct = Math.round(quiz.score / quiz.items.length * 100);
+  document.getElementById('gameBox').innerHTML = `
+    <div class="sheet-head"><h3>Resultado</h3><button class="x" onclick="closeOverlays()" aria-label="Cerrar">✕</button></div>
+    <div class="score">${quiz.score}/${quiz.items.length}</div>
+    <p style="text-align:center">${pct >= 80 ? '¡Excelente memoria! 🎉' : pct >= 50 ? 'Bien, sigue practicando 💪' : 'Repasa un poco más 📚'}</p>
+    <div class="btn-row" style="justify-content:center"><button class="btn accent" onclick="startQuiz()">Otra ronda 🎲</button><button class="btn" onclick="closeOverlays()">Cerrar</button></div>`;
+}
+
+/* ---------- flashcards ---------- */
+let flash = null;
+function startFlash(){
+  const ids = PHASE_ITEMS[activePhase];
+  let pool = ids.filter(id => (state[id] || 0) < MASTERY);
+  if(pool.length < 4) pool = ids;
+  flash = {deck: shuffle(pool).slice(0, 12).map(id => BY_ID[id]), i: 0, known: 0, missed: []};
+  document.getElementById('gameOv').classList.add('open'); flashCard();
+}
+function flashCard(){
+  const c = flash.deck[flash.i];
+  document.getElementById('gameBox').innerHTML = `
+    <div class="sheet-head"><h3>🃏 ${data[activePhase].title}</h3><button class="x" onclick="closeOverlays()" aria-label="Cerrar">✕</button></div>
+    <div class="muted">Tarjeta ${flash.i + 1} de ${flash.deck.length}</div>
+    <div class="qprog"><i style="width:${(flash.i / flash.deck.length) * 100}%"></i></div>
+    <div class="flip" id="flip" onclick="this.classList.toggle('on'); if(this.classList.contains('on')) speak(flash.deck[flash.i].hanzi, null)">
+      <div class="flip-in">
+        <div class="face"><div class="t">${c.es}</div><div class="hint">Piensa cómo se dice… toca para ver</div></div>
+        <div class="face back"><div class="t ${CFG.cjk ? 'cjk' : ''}">${c.hanzi}</div><div class="r">${c.pinyin}</div><div class="hint">${c.es}</div></div>
+      </div>
+    </div>
+    <div class="btn-row" style="justify-content:center;margin-bottom:12px"><button class="btn" data-text="${escapeHtml(c.hanzi)}" onclick="speak(this.dataset.text, this)">▶ Escuchar</button></div>
+    <div class="fc-btns"><button class="btn" onclick="flashNext(false)">🔁 Otra vez</button><button class="btn accent" onclick="flashNext(true)">✓ Lo sé</button></div>`;
+}
+function flashNext(ok){
+  const c = flash.deck[flash.i]; if(ok) flash.known++; else flash.missed.push(c);
+  flash.i++;
+  if(flash.i < flash.deck.length) return flashCard();
+  document.getElementById('gameBox').innerHTML = `
+    <div class="sheet-head"><h3>Repaso terminado</h3><button class="x" onclick="closeOverlays()" aria-label="Cerrar">✕</button></div>
+    <div class="score">${flash.known}/${flash.deck.length}</div>
+    <p style="text-align:center">${flash.missed.length ? 'Te quedan ' + flash.missed.length + ' para repasar.' : '¡Las sabías todas! 🎉'}</p>
+    <div class="btn-row" style="justify-content:center">
+      ${flash.missed.length ? '<button class="btn accent" onclick="flashRetry()">Repasar las que fallé</button>' : ''}
+      <button class="btn" onclick="startFlash()">Nuevo mazo</button></div>`;
+}
+function flashRetry(){ flash = {deck: shuffle(flash.missed), i: 0, known: 0, missed: []}; flashCard(); }
+
+function resetProgress(){
+  if(!confirm('¿Reiniciar todo el progreso de este idioma?')) return;
+  Object.keys(state).forEach(k => state[k] = k[0] === 'a' ? 0 : false);
+  saveState();
+  document.querySelectorAll('.task input').forEach(cb => cb.checked = false);
+  document.querySelectorAll('.tn').forEach(el => el.classList.remove('done'));
+  ITEMS.forEach(it => renderDots(it.id));
+  updateProgress(); applyFilters(); closeOverlays(); toast('Progreso reiniciado');
+}
+
+/* ---------- init ---------- */
+document.getElementById('brandFlag').textContent = CFG.flag;
+document.getElementById('brandName').textContent = CFG.name;
+const heroT = document.getElementById('heroTitle'); heroT.textContent = CFG.native; if(CFG.cjk) heroT.classList.add('cjk');
+document.getElementById('heroSub').textContent = `Método de un año para hablar ${CFG.nameLower} con fluidez · ${ITEMS.length} palabras y frases con audio`;
+document.getElementById('footNote').textContent = `Tu progreso se guarda automáticamente en este navegador. El audio usa la voz en ${CFG.nameLower} de tu dispositivo (${CFG.code}).`;
+buildAll(); initTheme(); updateProgress(); renderStreak(); applyFilters();
+const startChip = document.getElementById('chip-' + activePhase); if(startChip) setTimeout(() => startChip.scrollIntoView({inline:'center', block:'nearest'}), 50);
+ensureVoices();
+</script>
 </body>
 </html>

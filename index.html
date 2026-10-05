@@ -2,124 +2,104 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#e11d3e">
-<meta name="description" content="Planes de un año para aprender 9 idiomas desde el español: pronunciación, micrófono, repaso espaciado y seguimiento de progreso.">
-<title>Idiomas — elige el tuyo</title>
-<link rel="stylesheet" href="assets/app.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2248%22 fill=%22%23e11d3e%22/%3E%3Ctext x=%2250%22 y=%2268%22 font-size=%2252%22 text-anchor=%22middle%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22%3EA%3C/text%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d1b18">
+<title>Aprende idiomas — elige el tuyo</title>
+<style>
+:root{--bg:#f6f4ef;--surface:#fff;--surface2:#f1eee8;--text:#1d1b18;--muted:#6f6b63;--line:#e6e2d9;--shadow:0 1px 2px rgba(20,16,10,.06),0 8px 22px rgba(20,16,10,.06)}
+body.dark{--bg:#0e0e10;--surface:#17171a;--surface2:#212125;--text:#f3f1ec;--muted:#9d9a92;--line:#2a2a2f;--shadow:0 1px 2px rgba(0,0,0,.5),0 10px 26px rgba(0,0,0,.35)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45;transition:background .25s,color .25s}
+.wrap{max-width:900px;margin:0 auto;padding:max(28px,env(safe-area-inset-top)) 18px 70px}
+.top{display:flex;justify-content:flex-end}
+.tt{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:1.1rem;cursor:pointer}
+header{text-align:center;margin:6px 0 28px}
+h1{font-size:clamp(2rem,7vw,3rem);line-height:1.08;letter-spacing:-.02em;margin:0 0 10px}
+h1 em{font-style:normal;background:linear-gradient(90deg,#e11d3e,#be185d,#4f46e5,#0e7490,#15803d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);max-width:480px;margin:0 auto;font-size:1rem}
+.summary{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+.pill{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:7px 14px;font-size:.88rem;color:var(--muted)}
+.pill b{color:var(--text)}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:620px){.grid{grid-template-columns:1fr 1fr}}
+.card{--c:#e11d3e;position:relative;display:block;text-decoration:none;color:inherit;background:linear-gradient(150deg,color-mix(in srgb,var(--c) 13%,var(--surface)),var(--surface) 65%);border:1px solid var(--line);border-radius:22px;padding:18px 18px 16px;box-shadow:var(--shadow);transition:transform .18s,border-color .18s;overflow:hidden}
+.card:hover{transform:translateY(-3px);border-color:var(--c)}
+.card:focus-visible{outline:3px solid color-mix(in srgb,var(--c) 55%,transparent);outline-offset:2px}
+.row{display:flex;align-items:center;gap:14px}
+.flag{font-size:2.3rem;line-height:1}
+.nm{font-weight:800;font-size:1.15rem}
+.nat{color:var(--c);font-weight:700;font-size:1.05rem;margin-top:1px}
+.cjk{font-family:"Noto Serif CJK SC","Noto Serif CJK JP","Noto Serif CJK KR","Songti SC","Hiragino Mincho ProN",serif}
+.desc{color:var(--muted);font-size:.9rem;margin:12px 0 14px}
+.bar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--c);border-radius:99px;transition:width .6s}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:.82rem;color:var(--muted)}
+.go{font-weight:800;color:var(--c)}
+.tag{position:absolute;top:14px;right:14px;background:var(--c);color:#fff;font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:99px}
+.foot{text-align:center;color:var(--muted);font-size:.82rem;margin-top:34px}
+</style>
 </head>
 <body>
-<script>try{var t=localStorage.getItem('idiomas-theme')||localStorage.getItem('lang-hub-theme');if(t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches)document.body.classList.add('dark');}catch(e){}</script>
-<div class="wrap" style="max-width:760px">
-  <header class="hub-head">
-    <div class="hub-top"><button class="icon-btn" id="themeBtn" title="Cambiar tema" aria-label="Cambiar tema">🌙</button></div>
-    <h1>¿Qué idioma quieres aprender?</h1>
-    <div class="sub">Planes de un año con pronunciación, micrófono, repaso diario y seguimiento de tu progreso.</div>
+<div class="wrap">
+  <div class="top"><button class="tt" id="tt" aria-label="Cambiar tema">🌙</button></div>
+  <header>
+    <h1>Aprende <em>idiomas</em><br>a tu ritmo</h1>
+    <p class="sub">Escucha, repite y domina más de 600 palabras y frases por idioma. Tu progreso se guarda en este navegador.</p>
+    <div class="summary" id="summary"></div>
   </header>
-
-  <div class="today-card" id="today"></div>
-  <div class="lang-grid" id="grid"></div>
-
-  <div class="backup-row">
-    <button class="btn" id="exportBtn">⬇️ Descargar copia de mi progreso</button>
-    <button class="btn" id="importBtn">⬆️ Restaurar copia</button>
-    <input type="file" id="importFile" accept="application/json,.json" class="hidden">
-  </div>
-  <div class="footer-note">Cada idioma guarda su progreso por separado en este navegador.<br>Usa la copia de seguridad para pasarlo a otro dispositivo o no perderlo si borras los datos del navegador.</div>
+  <div class="grid" id="grid"></div>
+  <p class="foot">Elige un idioma para empezar · el micrófono funciona en https://</p>
 </div>
-
-<script src="assets/catalog.js"></script>
 <script>
-(function(){
-  const C = window.CATALOG;
-  const get = (k, d) => { try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } };
-  const raw = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const dstr = d => { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
-  const today = dstr(), yest = dstr(new Date(Date.now() - 86400000));
+const LANGS = [
+  {n:'Chino',nat:'中文',f:'🇨🇳',file:'chinese_fluency_plan.html',key:'chinese-plan',c:'#e11d3e',cjk:1,d:'Pinyin, tonos y frases del día a día.'},
+  {n:'Inglés',nat:'English',f:'🇬🇧',file:'english_fluency_plan.html',key:'english-plan',c:'#2563eb',d:'Pronunciación guiada y conversación real.'},
+  {n:'Portugués',nat:'Português',f:'🇧🇷',file:'portuguese_fluency_plan.html',key:'portuguese-plan',c:'#15803d',d:'Portugués de Brasil, claro y práctico.'},
+  {n:'Coreano',nat:'한국어',f:'🇰🇷',file:'korean_fluency_plan.html',key:'korean-plan',c:'#4f46e5',cjk:1,d:'Hangul, romanización y frases útiles.'},
+  {n:'Ruso',nat:'Русский',f:'🇷🇺',file:'russian_fluency_plan.html',key:'russian-plan',c:'#0e7490',d:'Cirílico con transliteración y audio.'},
+  {n:'Japonés',nat:'日本語',f:'🇯🇵',file:'japanese_fluency_plan.html',key:'japanese-plan',c:'#be185d',cjk:1,d:'Kana, kanji y frases con romaji.'},
+  {n:'Italiano',nat:'Italiano',f:'🇮🇹',file:'italian_fluency_plan.html',key:'italian-plan',c:'#b45309',d:'Pronunciación, vocabulario y frases cotidianas.'},
+  {n:'Francés',nat:'Français',f:'🇫🇷',file:'french_fluency_plan.html',key:'french-plan',c:'#1d4ed8',d:'Pronunciación, vocabulario y frases cotidianas.'}
+];
+const TOTAL = 620, MASTERY = 3;
+function get(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function day(o){const d=new Date(Date.now()-o*864e5);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 
-  function info(L){
-    const prog = get(L.storagePrefix + '-progress-v1', {}) || {};
-    const srs = get(L.storagePrefix + '-srs', {}) || {};
-    const st = get(L.storagePrefix + '-streak', null);
-    const log = get(L.storagePrefix + '-log', {}) || {};
-    const mastered = Object.keys(prog).filter(k => k.startsWith('a-') && prog[k] >= 3).length;
-    const started = Object.keys(prog).some(k => prog[k]);
-    const due = Object.values(srs).filter(c => c && c.due <= today).length;
-    const streak = st && st.lastDate && st.lastDate >= yest ? st.count : 0;
-    return {mastered, started, due, streak, xp: log[today] || 0};
-  }
+let totalMastered = 0, bestStreak = 0, recent = null, recentDate = '';
+const info = LANGS.map(L => {
+  let m = 0, streak = 0, last = '';
+  try{
+    const st = JSON.parse(get(L.key + '-progress-v1') || '{}');
+    m = Object.keys(st).filter(k => k[0] === 'a' && st[k] >= MASTERY).length;
+    const s = JSON.parse(get(L.key + '-streak') || 'null');
+    if(s){ last = s.lastDate || ''; if(last === day(0) || last === day(1)) streak = s.count; }
+  }catch(e){}
+  totalMastered += m; bestStreak = Math.max(bestStreak, streak);
+  if(last && last > recentDate){ recentDate = last; recent = L.key; }
+  return {m, streak, last};
+});
 
-  function render(){
-    const last = raw('idiomas-last');
-    const infos = C.map(L => Object.assign({L}, info(L)));
-    const xp = infos.reduce((s, x) => s + x.xp, 0);
-    const best = Math.max(0, ...infos.map(x => x.streak));
-    const lastL = C.find(L => L.code === last);
-    const lastI = lastL && infos.find(x => x.L === lastL);
-    document.getElementById('today').innerHTML = `
-      <div><div class="big">🔥 ${best}</div><div class="muted" style="font-size:12.5px">${best === 1 ? 'día' : 'días'} de racha</div></div>
-      <div><div class="big">${xp}</div><div class="muted" style="font-size:12.5px">XP hoy</div></div>
-      ${lastL ? `<a class="btn main cont" href="${lastL.page}">${lastL.flag} Continuar con ${esc(lastL.name)}${lastI.due ? ' · ' + lastI.due + ' por repasar' : ''} →</a>`
-              : `<div class="cont muted" style="font-size:13.5px">Elige un idioma para empezar 👇</div>`}`;
-    document.getElementById('grid').innerHTML = infos.map(x => {
-      const L = x.L, pct = Math.round(x.mastered / L.total * 100);
-      return `<a class="lang-card" href="${L.page}">
-        ${L.code === last ? '<span class="badge-last">ÚLTIMO</span>' : L.isNew && !x.started ? '<span class="badge-new">NUEVO</span>' : ''}
-        <div class="flag">${L.flag}</div>
-        <div class="name">${esc(L.name)}</div>
-        <div class="native">${esc(L.hero)}</div>
-        <div class="desc">${esc(L.desc.replace(/^Nuevo · /, ''))}</div>
-        ${x.started ? `<div class="mini-bar"><div style="width:${pct}%"></div></div>
-          <div class="meta"><span>${x.mastered}/${L.total} dominadas</span><span>${x.streak ? '🔥 ' + x.streak : ''}${x.due ? ' · 🔁 ' + x.due : ''}</span></div>`
-          : `<div class="meta"><span>${L.total} frases y palabras</span></div>`}
-        <div class="go">${x.started ? 'Continuar →' : 'Empezar →'}</div>
-      </a>`;
-    }).join('');
-  }
+const grid = document.getElementById('grid');
+LANGS.forEach((L, i) => {
+  const {m, streak} = info[i], pct = Math.min(100, Math.round(m / TOTAL * 100));
+  const a = document.createElement('a');
+  a.className = 'card'; a.href = L.file; a.style.setProperty('--c', L.c);
+  a.innerHTML = `${recent === L.key ? '<span class="tag">Continuar</span>' : ''}
+    <div class="row"><div class="flag">${L.f}</div><div><div class="nm">${L.n}</div><div class="nat ${L.cjk ? 'cjk' : ''}">${L.nat}</div></div></div>
+    <p class="desc">${L.d}</p>
+    <div class="bar"><i style="width:${pct}%"></i></div>
+    <div class="meta"><span>${m ? m + ' de ' + TOTAL + ' dominadas' : TOTAL + ' palabras y frases'}${streak ? ' · 🔥 ' + streak : ''}</span><span class="go">${m ? 'Seguir →' : 'Empezar →'}</span></div>`;
+  grid.appendChild(a);
+});
 
-  // Tema
-  const tb = document.getElementById('themeBtn');
-  const syncIcon = () => tb.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-  tb.onclick = () => { const d = document.body.classList.toggle('dark'); try{ localStorage.setItem('idiomas-theme', d ? 'dark' : 'light'); }catch(e){} syncIcon(); };
-  syncIcon();
+const sm = document.getElementById('summary');
+sm.innerHTML = `<span class="pill"><b>${LANGS.length}</b> idiomas</span><span class="pill"><b>${totalMastered}</b> frases dominadas</span>` + (bestStreak ? `<span class="pill">🔥 <b>${bestStreak}</b> días de racha</span>` : '');
 
-  // Copia de seguridad
-  const prefixes = C.map(L => L.storagePrefix + '-').concat(['idiomas-', 'lang-hub-']);
-  document.getElementById('exportBtn').onclick = () => {
-    const data = {};
-    try{ for (let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if (prefixes.some(p => k.startsWith(p))) data[k] = localStorage.getItem(k); } }catch(e){}
-    const blob = new Blob([JSON.stringify({app: 'idiomas', version: 2, date: new Date().toISOString(), data}, null, 1)], {type: 'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'idiomas-progreso-' + today + '.json';
-    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-  };
-  const fileIn = document.getElementById('importFile');
-  document.getElementById('importBtn').onclick = () => fileIn.click();
-  fileIn.onchange = () => {
-    const f = fileIn.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      try{
-        const j = JSON.parse(r.result);
-        if (!j || j.app !== 'idiomas' || !j.data) throw new Error('formato');
-        let n = 0;
-        Object.keys(j.data).forEach(k => { if (prefixes.some(p => k.startsWith(p))){ localStorage.setItem(k, j.data[k]); n++; } });
-        render(); alertBox('✓ Copia restaurada (' + n + ' elementos).');
-      }catch(e){ alertBox('Ese archivo no parece una copia de esta app.'); }
-      fileIn.value = '';
-    };
-    r.readAsText(f);
-  };
-  function alertBox(msg){
-    let host = document.querySelector('.toast-host');
-    if (!host){ host = document.createElement('div'); host.className = 'toast-host'; document.body.appendChild(host); }
-    const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; host.appendChild(t); setTimeout(() => t.remove(), 3500);
-  }
-
-  render();
-  window.addEventListener('pageshow', render);
-})();
+const tt = document.getElementById('tt');
+function setDark(d){document.body.classList.toggle('dark', d); tt.textContent = d ? '☀️' : '🌙'; try{localStorage.setItem('hub-theme', d ? 'dark' : 'light')}catch(e){}}
+let t = get('hub-theme');
+setDark(t ? t === 'dark' : (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches));
+tt.onclick = () => setDark(!document.body.classList.contains('dark'));
 </script>
 </body>
 </html>
