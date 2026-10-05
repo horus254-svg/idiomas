@@ -55,7 +55,7 @@ let streak = store.get(K.streak, null) || {count: 0, lastDate: null};
 let log = store.get(K.log, {}) || {};
 let fav = new Set(store.get(K.fav, []) || []);
 let srs = store.get(K.srs, null);
-const settings = Object.assign({rate: 0.85, roman: true, hideEs: false, goal: 20}, store.get('idiomas-settings', {}) || {});
+const settings = Object.assign({rate: 0.85, roman: true, hideEs: false, goal: 20, strict: 'flex'}, store.get('idiomas-settings', {}) || {});
 if (!srs){
   // Primera vez con la versión nueva: las frases ya practicadas entran al repaso, repartidas en varios días.
   srs = {}; let i = 0;
@@ -191,6 +191,119 @@ function closeEnough(said, expected, ratio){
     return lev(s, e) <= Math.max(1, Math.ceil(e.length * (ratio || 0.25)));
   });
 }
+/* ---------- Evaluación de la pronunciación ----------
+ * Compara palabra por palabra (o carácter por carácter en chino, japonés y coreano) con tolerancia:
+ * tildes, mayúsculas y signos no cuentan; números en cifra = número en palabra; hiragana = katakana;
+ * en chino se compara el sonido (pinyin), porque el reconocedor a menudo escribe otro carácter que suena igual.
+ * Las palabras de más no restan. Devuelve el porcentaje de la frase que se reconoció. */
+const CHAR_MODE = ['zh', 'ja', 'ko'].includes(L.code);
+const STRICT = {flex: 0.6, normal: 0.75, strict: 0.9};
+function kataToHira(s){ return s.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)); }
+function phonFold(w){ return w.replace(/(.)\1+/g, '$1').replace(/ph/g, 'f').replace(/([bcdfgkprt])h/g, '$1').replace(/y/g, 'i').replace(/w/g, 'u'); }
+function normTok(w){
+  let s = String(w || '').toLowerCase();
+  if (L.latin) s = s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ß/g, 'ss');
+  if (L.code === 'ru') s = s.replace(/ё/g, 'е');
+  if (L.code === 'ja') s = kataToHira(s);
+  s = s.replace(/[^\p{L}\p{N}]+/gu, '');
+  if (L.latin && s && !/^\d+$/.test(s)) s = phonFold(s);
+  return s;
+}
+const NUM_ES = {cero:'0', uno:'1', dos:'2', tres:'3', cuatro:'4', cinco:'5', seis:'6', siete:'7', ocho:'8', nueve:'9', diez:'10', cien:'100', mil:'1000'};
+const NUM = {};
+ALL.forEach(it => { const d = NUM_ES[it.es]; if (d != null) it.t.split(/\s*\/\s*/).forEach(v => { const k = normTok(v); if (k) NUM[k] = d; }); });
+// Chino: pinyin de cada carácter calculado con contexto (银行 → yín háng), sin tono y con tono.
+if (L.code === 'zh'){ NUM['两'] = '2'; NUM['俩'] = '2'; }
+function zhPinyin(text){
+  if (L.code !== 'zh' || !window.pinyinPro) return null;
+  try{
+    return {none: pinyinPro.pinyin(text, {type: 'array', toneType: 'none'}), num: pinyinPro.pinyin(text, {type: 'array', toneType: 'num'}), mark: pinyinPro.pinyin(text, {type: 'array'})};
+  }catch(e){ return null; }
+}
+// Confusiones típicas de hispanohablantes: zh/z/j, ch/c/q, sh/s/x, r/l, ü/u, -ng/-n.
+function zhFuzzy(py, level){
+  let s = py.replace(/ü|v/g, 'u').replace(/ng$/, 'n');
+  if (level === 'flex') s = s.replace(/^zh|^j/, 'z').replace(/^ch|^q/, 'c').replace(/^sh|^x/, 's').replace(/^r/, 'l');
+  return s;
+}
+function tokenize(text){
+  const t = String(text).replace(/\(.*?\)/g, ' ');
+  const zp = zhPinyin(t);
+  const mk = (d, off) => {
+    const key = normTok(d), o = {disp: d, key};
+    if (key && zp && /\p{Script=Han}/u.test(d) && zp.none[off] && zp.none[off] !== d){
+      o.py = zp.none[off].replace(/ü/g, 'v'); o.pyT = zp.num[off]; o.pyMark = zp.mark[off];
+    }
+    return o;
+  };
+  if (CHAR_MODE){
+    const out = [];
+    // Las cifras y palabras latinas dentro de texto asiático se tratan como una sola unidad.
+    t.replace(/[0-9]+|[A-Za-z]+|[\s\S]/gu, (m, off) => { out.push(mk(m, off)); return m; });
+    return out;
+  }
+  return t.split(/(\s+)/).filter(x => x !== '').map(w => /^\s+$/.test(w) ? {disp: w, key: ''} : mk(w));
+}
+function tokEq(a, b){
+  if (a.key === b.key) return true;
+  if (NUM[a.key] && NUM[a.key] === (NUM[b.key] || b.key)) return true;
+  if (NUM[b.key] && NUM[b.key] === a.key) return true;
+  if (a.py && b.py){
+    const lv = settings.strict || 'flex';
+    if (lv === 'strict'){   // exige también el tono (el neutro, 0, vale con cualquiera)
+      const ta = a.pyT.slice(-1), tb = b.pyT.slice(-1);
+      return a.py === b.py && (ta === tb || ta === '0' || tb === '0' || !/\d/.test(ta) || !/\d/.test(tb));
+    }
+    return zhFuzzy(a.py, lv) === zhFuzzy(b.py, lv);
+  }
+  if (CHAR_MODE) return false;
+  const x = a.key, y = b.key, d = lev(x, y);
+  return x.length >= 6 ? d <= 2 : x.length >= 3 ? d <= 1 : false;
+}
+function lcsHits(exp, said){
+  const m = exp.length, n = said.length;
+  const dp = Array.from({length: m + 1}, () => new Array(n + 1).fill(0));
+  for (let i = m - 1; i >= 0; i--) for (let j = n - 1; j >= 0; j--)
+    dp[i][j] = tokEq(exp[i], said[j]) ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+  const hits = new Set(); let i = 0, j = 0;
+  while (i < m && j < n){ if (tokEq(exp[i], said[j])){ hits.add(i); i++; j++; } else if (dp[i+1][j] >= dp[i][j+1]) i++; else j++; }
+  return hits;
+}
+function evaluateSpeech(alts, it){
+  let best = null;
+  String(it.t).split(/\s*\/\s*/).forEach(variant => {
+    const toks = tokenize(variant), scored = toks.filter(x => x.key);
+    if (!scored.length) return;
+    alts.forEach(alt => {
+      const said = tokenize(alt).filter(x => x.key);
+      const hitIdx = lcsHits(scored, said);
+      // En chino, la 儿 final (哪儿) es opcional: el reconocedor suele omitirla.
+      const optional = scored.filter((x, k) => x.disp === '儿' && k > 0 && !hitIdx.has(k)).length;
+      const score = hitIdx.size / Math.max(1, scored.length - optional);
+      if (!best || score > best.score){
+        const hitToks = new Set(Array.from(hitIdx).map(k => scored[k]));
+        best = {score, said: alt, toks, hitToks};
+      }
+    });
+  });
+  if (!best) return {ok: false, score: 0, said: alts[0] || '', html: esc(it.t)};
+  best.ok = best.score >= (STRICT[settings.strict] || STRICT.flex);
+  best.html = best.toks.map(x => {
+    if (!x.key) return esc(x.disp);
+    const cls = best.hitToks.has(x) ? 'w-hit' : (x.disp === '儿' && L.code === 'zh') ? 'w-opt' : 'w-miss';
+    return x.pyMark ? `<ruby class="${cls}">${esc(x.disp)}<rt>${esc(x.pyMark)}</rt></ruby>` : `<span class="${cls}">${esc(x.disp)}</span>`;
+  }).join('');
+  if (L.code === 'zh'){ const zp = zhPinyin(best.said); if (zp) best.saidPy = zp.mark.filter(x => /[a-zü]/i.test(x)).join(' '); }
+  return best;
+}
+function speechFeedbackHTML(ev, opts){
+  const pct = Math.round(ev.score * 100);
+  if (ev.ok) return `✅ ¡Correcto!${pct < 100 ? ` (${pct}%)` : ''} <span class="marks" lang="${L.voice}">${ev.html}</span>`;
+  return `<div>❌ ${pct}% — se entendió: «${esc(ev.said)}»${ev.saidPy ? ` <span class="said-py">(${esc(ev.saidPy)})</span>` : ''}</div>
+    <div class="marks" lang="${L.voice}">${ev.html}</div>
+    <div class="fb-actions">${L.code === 'zh' ? 'En rojo, las sílabas que no se reconocieron: compara su pinyin con lo que se entendió.' : 'En rojo, lo que no se reconoció.'} ${opts && opts.override ? `<button class="link-btn" data-act="${opts.override}" data-id="${opts.id || ''}">✓ Lo dije bien, contar como correcta</button>` : ''}</div>`;
+}
+
 let activeRec = null;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 /* Escucha robusta:
@@ -208,7 +321,7 @@ function listen(onText, onErr, onStatus){
   const session = {finished: false, alts: [], heard: false, attempts: 0, rec: null, silenceT: null, maxT: null};
   const finish = (fn) => {
     if (session.finished) return; session.finished = true;
-    clearTimeout(session.silenceT); clearTimeout(session.maxT);
+    clearTimeout(session.silenceT); clearTimeout(session.maxT); clearTimeout(session.finalT);
     try{ session.rec && session.rec.abort(); }catch(e){}
     if (activeRec === session) activeRec = null;
     fn();
@@ -218,9 +331,11 @@ function listen(onText, onErr, onStatus){
     else if (session.heard) onErr('Te oí, pero no entendí las palabras. Acércate al micrófono y habla un poco más despacio.');
     else onErr('No se detectó voz. Espera a ver «Habla ahora» y prueba otra vez (revisa que el micrófono correcto esté permitido).');
   });
-  session.stop = () => { if (session.alts.length || session.heard) deliver(); else finish(() => onErr('')); };   // segundo toque
+  session.stop = () => { if (session.alts.length || session.heard){ onStatus('checking'); finalize(); } else finish(() => onErr('')); };   // segundo toque
   session.cancel = () => finish(() => {});
-  const armSilence = () => { clearTimeout(session.silenceT); session.silenceT = setTimeout(deliver, 1300); };
+  // Tras ~1,2 s de silencio pide al reconocedor su resultado definitivo (más preciso que el parcial).
+  const finalize = () => { session.stopping = true; clearTimeout(session.silenceT); try{ session.rec.stop(); }catch(e){} clearTimeout(session.finalT); session.finalT = setTimeout(deliver, 1800); };
+  const armSilence = () => { clearTimeout(session.silenceT); session.silenceT = setTimeout(finalize, 1200); };
   function start(){
     session.attempts++;
     const rec = new SR(); session.rec = rec;
@@ -229,13 +344,14 @@ function listen(onText, onErr, onStatus){
     rec.onspeechstart = () => { session.heard = true; onStatus('hearing'); };
     rec.onresult = e => {
       session.heard = true;
-      const res = e.results[e.results.length - 1];
-      // Junta lo dicho en todos los segmentos (en modo continuo puede llegar en trozos).
-      const joined = Array.from(e.results).map(r => r[0].transcript).join(' ').trim();
-      const alts = Array.from(res).map(r => r.transcript.trim()).filter(Boolean);
-      session.alts = Array.from(new Set([joined].concat(alts))).filter(Boolean);
+      const results = Array.from(e.results), last = results[results.length - 1];
+      const prefix = results.slice(0, -1).map(r => r[0].transcript).join(' ');
+      const alts = Array.from(last).map(r => (prefix + ' ' + r.transcript).trim());
+      alts.push(...Array.from(last).map(r => r.transcript.trim()));        // por si el navegador repite segmentos
+      session.alts = Array.from(new Set(alts)).filter(Boolean);
+      session.final = last.isFinal;
       onStatus('hearing', session.alts[0]);
-      if (res.isFinal && !rec.continuous) deliver(); else armSilence();
+      if (last.isFinal && (!rec.continuous || session.stopping)) deliver(); else armSilence();
     };
     rec.onerror = e => {
       if (session.finished) return;
@@ -261,7 +377,7 @@ function listen(onText, onErr, onStatus){
   start();
   return session;
 }
-const MIC_MSG = {starting: '⏳ Encendiendo el micrófono…', ready: '🎤 Habla ahora', hearing: '👂 Te escucho…', retry: '🎤 Sigo escuchando, habla ahora'};
+const MIC_MSG = {checking: '⏳ Comprobando…', starting: '⏳ Encendiendo el micrófono…', ready: '🎤 Habla ahora', hearing: '👂 Te escucho…', retry: '🎤 Sigo escuchando, habla ahora'};
 
 /* ---------------- Efectos ---------------- */
 function chime(){
@@ -424,7 +540,7 @@ function renderPhase(i){
       ${tasks ? `<details class="habits"><summary>Hábitos y meta de esta sección <span class="chev">▸</span></summary><div class="task-list">${tasks}</div>
         <div class="milestone"><b>Meta —</b> ${esc(ph.milestone)}</div></details>` : ''}
       <div class="section-title">${ph.groups ? 'Vocabulario y frases' : 'Frases de esta sección'}</div>
-      <div class="hint">Toca ▶ para oír, luego 🎤 y dilo en voz alta. Con ${MASTERY} aciertos (micrófono, práctica o repaso) la frase queda dominada.</div>
+      <div class="hint">Toca ▶ para oír, luego 🎤 y dilo en voz alta. Con ${MASTERY} aciertos (micrófono, práctica o repaso) la frase queda dominada.${L.code === 'zh' ? ' Consejo: di la frase entera de corrido; el reconocedor entiende mejor frases completas que sílabas sueltas.' : ''}</div>
       ${cards}
       <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" data-act="practice-phase">🎯 Practicar esta sección</button>
@@ -613,7 +729,7 @@ function renderQuiz(){
     body = `<div class="speak-btns" style="display:flex;justify-content:center;gap:14px;margin:6px 0 4px">
         <button class="round mic q-play" data-act="qmic" ${q.answered ? 'disabled' : ''} aria-label="Hablar">🎤</button>
         <button class="round play q-play" data-act="say" data-text="${esc(it.t)}" aria-label="Escuchar la respuesta">▶</button></div>
-      <div class="feedback ${q.fbClass || ''}" id="qFb" style="text-align:center">${esc(q.fb || '')}</div>
+      <div class="feedback ${q.fbClass || ''}" id="qFb" style="text-align:center">${q.fbHTML || esc(q.fb || '')}</div>
       ${q.answered ? '' : `<div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="link-btn" data-act="peek">Ver respuesta</button><span class="muted">·</span><button class="link-btn" data-act="qskip">No lo sé</button></div>`}`;
   }
   const next = q.answered ? `<button class="btn main block" data-act="qnext">${q.i + 1 < q.items.length ? 'Siguiente →' : 'Ver resultado'}</button>` : '';
@@ -644,16 +760,17 @@ function qMic(){
   const q = quiz, it = q.items[q.i];
   if (activeRec && activeRec.quiz){ activeRec.stop(); return; }
   const btn = $('#sheet .mic'); if (btn) btn.classList.add('listening');
-  const status = (msg, cls) => { q.fb = msg; q.fbClass = cls || ''; const fb = $('#qFb'); if (fb){ fb.textContent = msg; fb.className = 'feedback ' + (cls || ''); } };
+  const status = (msg, cls) => { q.fb = msg; q.fbHTML = null; q.fbClass = cls || ''; const fb = $('#qFb'); if (fb){ fb.textContent = msg; fb.className = 'feedback ' + (cls || ''); } };
   const rec = listen(alts => {
-    const hit = alts.find(a => closeEnough(a, it.t));
-    if (hit){ status('✅ ¡Correcto! Dijiste: ' + hit, 'ok'); qResult(true); }
-    else { q.tries = (q.tries || 0) + 1; status(`❌ Se entendió «${alts[0]}». ${q.tries < 3 ? 'Prueba otra vez.' : ''}`, 'bad'); if (q.tries >= 3) qResult(false); else renderQuiz(); }
+    const ev = evaluateSpeech(alts, it);
+    q.fbHTML = speechFeedbackHTML(ev, ev.ok ? null : {override: 'qoverride'});
+    if (ev.ok){ q.fbClass = 'ok'; qResult(true); }
+    else { q.tries = (q.tries || 0) + 1; q.fbClass = 'bad'; if (q.tries >= 3) qResult(false); else renderQuiz(); }
   }, msg => { status(msg, msg ? 'bad' : ''); renderQuiz(); },
   (st, heard) => status(heard ? '👂 «' + heard + '»' : MIC_MSG[st]));
   if (rec) rec.quiz = true;
 }
-function qNext(){ const q = quiz; q.i++; q.answered = false; q.opts = null; q.picked = null; q.typed = ''; q.hint = false; q.fb = ''; q.fbClass = ''; q.tries = 0; q.peek = false; renderQuiz(); }
+function qNext(){ const q = quiz; q.i++; q.answered = false; q.opts = null; q.picked = null; q.typed = ''; q.hint = false; q.fb = ''; q.fbHTML = null; q.fbClass = ''; q.tries = 0; q.peek = false; renderQuiz(); }
 function renderQuizResult(){
   const q = quiz, pct = Math.round(q.score / q.items.length * 100);
   openSheet(head('Resultado') + `<div class="result">
@@ -704,6 +821,9 @@ async function openSettings(){
   openSheet(head('Ajustes') + `
     <div class="lbl-sm" style="margin-top:0">Velocidad de la voz</div>
     <div class="seg">${[[0.6, 'Lenta'], [0.85, 'Normal'], [1, 'Rápida']].map(([v, l]) => `<button class="${settings.rate === v ? 'on' : ''}" data-act="rate" data-v="${v}">${l}</button>`).join('')}</div>
+    <div class="lbl-sm">Exigencia del micrófono</div>
+    <div class="seg">${[['flex', 'Flexible'], ['normal', 'Normal'], ['strict', 'Estricta']].map(([v, l]) => `<button class="${settings.strict === v ? 'on' : ''}" data-act="strict" data-v="${v}">${l}</button>`).join('')}</div>
+    <div class="muted" style="font-size:12px;margin-top:6px">Qué parte de la frase debe reconocerse: flexible 60 %, normal 75 %, estricta 90 %.${L.code === 'zh' ? ' En chino, «Flexible» perdona las confusiones típicas (zh/z, ch/c, sh/s, x/s, q/c, r/l, -n/-ng) y no mira los tonos; «Estricta» exige además el tono correcto.' : ''}</div>
     <div class="lbl-sm">Meta diaria</div>
     <div class="seg">${[10, 20, 30, 50].map(v => `<button class="${settings.goal === v ? 'on' : ''}" data-act="goal" data-v="${v}">${v} XP</button>`).join('')}</div>
     <div class="muted" style="font-size:12px;margin-top:6px">XP: +2 por pronunciar bien con 🎤 · +1 por acierto en práctica o repaso · +5 al dominar una frase.</div>
@@ -774,6 +894,9 @@ function onClick(e){
     case 'peek': quiz.peek = true; renderQuiz(); speak(quiz.items[quiz.i].t); break;
     case 'qskip': qResult(false); break;
     case 'hint': quiz.hint = true; { const h = $('#qHint'); if (h) h.textContent = quiz.items[quiz.i].es; } break;
+    case 'override': { const f = $('#fb-' + id); if (f){ f.innerHTML = '✓ Contada como correcta.'; f.className = 'feedback ok'; } addXP(1); bumpMastery(id); break; }
+    case 'qoverride': if (quiz && !quiz.answered){ quiz.fbHTML = '✓ Contada como correcta.'; quiz.fbClass = 'ok'; qResult(true); } break;
+    case 'strict': settings.strict = el.dataset.v; save.settings(); openSettings(); break;
     case 'stats': openStats(); break;
     case 'settings': openSettings(); break;
     case 'rate': settings.rate = +el.dataset.v; save.settings(); openSettings(); speak(ALL[0].t); break;
@@ -792,9 +915,9 @@ function cardMic(id, btn){
   btn.classList.add('listening');
   const rec = listen(alts => {
     done();
-    const hit = alts.find(a => closeEnough(a, it.t));
-    if (hit){ set('✅ ¡Correcto! Dijiste: ' + hit, 'ok'); addXP(2); bumpMastery(id); }
-    else set('❌ Casi — se entendió: «' + alts[0] + '». Escucha ▶ y prueba otra vez.', 'bad');
+    const ev = evaluateSpeech(alts, it);
+    if (fb){ fb.innerHTML = speechFeedbackHTML(ev, {override: 'override', id}); fb.className = 'feedback ' + (ev.ok ? 'ok' : 'bad'); }
+    if (ev.ok){ addXP(2); bumpMastery(id); }
   }, msg => { done(); set(msg, msg ? 'bad' : ''); },
   (st, heard) => set(heard ? '👂 «' + heard + '»' : MIC_MSG[st] + (st === 'ready' ? ' (toca 🎤 otra vez al terminar)' : '')));
   if (rec) rec.btn = btn; else done();
@@ -846,6 +969,7 @@ function init(){
   renderPhase(Math.max(0, idx));
   renderProgress();
   ensureVoices();
+  if (L.code === 'zh' && !window.pinyinPro){ const sc = document.createElement('script'); sc.src = 'assets/vendor/pinyin-pro.js'; sc.async = true; document.head.appendChild(sc); }
 }
 init();
 })();

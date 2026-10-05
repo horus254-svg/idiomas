@@ -6,7 +6,7 @@ Planes de un año para aprender 9 idiomas desde el español: chino, inglés, por
 
 - **Unas 480 frases y palabras por idioma**, en 13 secciones: pronunciación/alfabeto, las 4 fases del plan, vocabulario temático, situaciones reales (hotel, farmacia, dinero, teléfono, quejas, hobbies) y hora y calendario.
 - **▶ Audio** con la voz del dispositivo (con respaldo en línea) y velocidad ajustable; 🐢 para oír más despacio.
-- **🎤 Micrófono**: compara tu pronunciación con la frase (ignora mayúsculas, signos y tildes).
+- **🎤 Micrófono**: compara palabra por palabra con tolerancia (tildes, signos, números en cifra, hiragana/katakana; en chino compara el sonido en pinyin). Marca en verde lo reconocido y en rojo lo que faltó. Exigencia ajustable en ⚙️ Ajustes.
 - **🔁 Repaso de hoy**: repetición espaciada. Cada frase que aciertas vuelve a los 1, 2, 4, 8, 16… días.
 - **🎯 Práctica** con 5 modos: escuchar y elegir, leer y elegir, del español al idioma, dictado y «dilo tú». Puedes practicar una sección, lo ya practicado, lo difícil, tus favoritas o todo.
 - **📊 Progreso**: racha, XP y meta diaria, calendario de actividad y dominio por sección.

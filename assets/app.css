@@ -341,3 +341,15 @@ select.sel{background:var(--card-bg);border:1px solid var(--line);color:var(--in
 .sheet:focus{outline:none;}
 @media (min-width:900px){nav.phases{flex-wrap:wrap;overflow:visible;margin:0 0 20px;padding:0;}}
 .speak-btns .q-play{margin:0;}
+.marks{display:block;font-size:17px;font-weight:700;margin-top:4px;line-height:1.35;}
+.w-hit{color:var(--done);}
+.w-miss{color:var(--seal);text-decoration:underline wavy;text-underline-offset:3px;}
+.fb-actions{font-size:12px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;}
+.feedback.ok .marks .w-hit{color:var(--done);}
+.marks ruby{ruby-position:over;margin:0 1px;}
+.marks rt{font-size:11px;font-weight:600;letter-spacing:0;}
+.marks ruby.w-miss{text-decoration:none;}
+.marks ruby.w-miss rt{text-decoration:underline wavy;}
+.said-py{color:var(--gold);font-weight:600;}
+.feedback .marks{line-height:1.9;}
+.w-opt{color:var(--muted);}
