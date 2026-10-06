@@ -660,10 +660,20 @@ async function primeMic(){
   try{ const s = await navigator.mediaDevices.getUserMedia({audio: true}); s.getTracks().forEach(t => t.stop()); return 'ok'; }
   catch(e){ return e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'denied' : e && e.name === 'NotFoundError' ? 'nomic' : 'ok'; }
 }
+// Speech engines write spoken numbers as digits ("三" → "3", "three" → "3"), so accept the digit form too.
+const NUMWORDS = {cero: 0, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, cien: 100, mil: 1000};
+function numberOf(item){ const k = String(item.es).split('(')[0].trim().toLowerCase(); return k in NUMWORDS ? NUMWORDS[k] : null; }
 function heardMatches(alts, item){
-  const targets = [cmp(item.t)];
-  return alts.some(a => { const s = cmp(a); if(!s) return false;
-    return targets.some(e => s === e || lev(s, e) <= Math.max(1, Math.ceil(e.length * .25))); });
+  const e = cmp(item.t), n = numberOf(item);
+  return alts.some(a => {
+    const s = cmp(a); if(!s) return false;
+    const tol = e.length <= 2 ? 0 : Math.max(1, Math.ceil(e.length * (CFG.cjk ? .2 : .25)));   // 1–2 letter words must match exactly
+    if(s === e || lev(s, e) <= tol) return true;
+    if(n !== null && (s === String(n) || s === cmp('一' + item.t))) return true;
+    // Very short Chinese/Japanese/Korean words often come back inside a longer guess ("多" → "很多").
+    if(CFG.cjk && e.length <= 3 && s.length <= e.length + 3 && s.includes(e)) return true;
+    return false;
+  });
 }
 // Resolves {status:'ok'|'wrong'|'error', heard, msg}
 async function recognize(item, onListening){
@@ -676,12 +686,20 @@ async function recognize(item, onListening){
     let finished = false; const fin = r => { if(!finished){ finished = true; resolve(r); } };
     const run = attempt => {
       const r = new SR(); activeRec = r;
-      r.lang = CFG.code; r.maxAlternatives = 4; r.interimResults = false; r.continuous = false;
-      let got = false, started = false;
+      r.lang = CFG.code; r.maxAlternatives = 4; r.interimResults = true; r.continuous = false;
+      let got = false, started = false, interim = null;
       const timer = setTimeout(() => { if(!started && !r._stopped){ r._stopped = true; try{ r.abort(); }catch(e){} fin({status: 'error', msg: 'El micrófono no respondió. Inténtalo de nuevo.'}); } }, 7000);
       r.onstart = () => { started = true; clearTimeout(timer); onListening && onListening(); };
-      r.onresult = e => { got = true; const alts = Array.from(e.results[0]).map(x => x.transcript);
-        fin({status: heardMatches(alts, item) ? 'ok' : 'wrong', heard: alts[0] || ''}); };
+      // Interim results help with one-syllable words, which some phones cut off before a final result.
+      r.onresult = e => {
+        const res = e.results[e.results.length - 1], alts = Array.from(res).map(x => x.transcript).filter(Boolean);
+        if(!alts.length) return;
+        const ok = heardMatches(alts, item);
+        if(res.isFinal === false && !ok){ interim = alts; return; }
+        got = true;
+        if(res.isFinal === false){ r._stopped = true; try{ r.abort(); }catch(err){} }
+        fin({status: ok ? 'ok' : 'wrong', heard: alts[0] || ''});
+      };
       r.onerror = e => {
         clearTimeout(timer);
         if(r._stopped) return;
@@ -692,7 +710,7 @@ async function recognize(item, onListening){
           'network': 'El reconocimiento de voz necesita internet.', 'language-not-supported': 'Tu dispositivo no reconoce voz en este idioma.'};
         fin({status: 'error', msg: m[e.error] || ('Error de reconocimiento: ' + e.error)});
       };
-      r.onend = () => { clearTimeout(timer); if(r._stopped) return; if(activeRec === r) activeRec = null; if(!got) fin({status: 'error', msg: 'No se escuchó nada. Toca 🎤 y habla enseguida.'}); };
+      r.onend = () => { clearTimeout(timer); if(r._stopped) return; if(activeRec === r) activeRec = null; if(!got){ if(interim) fin({status: heardMatches(interim, item) ? 'ok' : 'wrong', heard: interim[0]}); else fin({status: 'error', msg: 'No se escuchó nada. Toca 🎤 y habla enseguida.'}); } };
       try{ r.start(); }catch(err){ clearTimeout(timer); if(attempt < 3) setTimeout(() => run(attempt + 1), 400); else fin({status: 'error', msg: 'No se pudo iniciar el micrófono. Recarga la página.'}); }
     };
     run(1);
