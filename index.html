@@ -44,7 +44,7 @@ h1 em{font-style:normal;background:linear-gradient(90deg,#e11d3e,#be185d,#4f46e5
   <div class="top"><button class="tt" id="tt" aria-label="Cambiar tema">🌙</button></div>
   <header>
     <h1>Aprende <em>idiomas</em><br>a tu ritmo</h1>
-    <p class="sub">Escucha, repite y domina más de 600 palabras y frases por idioma. Tu progreso se guarda en este navegador.</p>
+    <p class="sub">Escucha, repite y domina casi 800 palabras y frases por idioma. Tu progreso se guarda en este navegador.</p>
     <div class="summary" id="summary"></div>
   </header>
   <div class="grid" id="grid"></div>
@@ -61,7 +61,7 @@ const LANGS = [
   {n:'Italiano',nat:'Italiano',f:'🇮🇹',file:'italian_fluency_plan.html',key:'italian-plan',c:'#b45309',d:'Pronunciación, vocabulario y frases cotidianas.'},
   {n:'Francés',nat:'Français',f:'🇫🇷',file:'french_fluency_plan.html',key:'french-plan',c:'#1d4ed8',d:'Pronunciación, vocabulario y frases cotidianas.'}
 ];
-const TOTAL = 620, MASTERY = 3;
+const TOTAL = 793, MASTERY = 3;
 function get(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function day(o){const d=new Date(Date.now()-o*864e5);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 
