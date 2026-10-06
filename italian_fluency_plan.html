@@ -615,6 +615,7 @@ rateSlider.oninput = () => { rate = parseFloat(rateSlider.value); document.getEl
 
 const lastSpoken = {};
 async function speak(text, btn){
+  stopActiveRec();
   const now = Date.now();
   if(lastSpoken[text] && now - lastSpoken[text] < 700) return;
   lastSpoken[text] = now;
@@ -667,27 +668,86 @@ function setFb(id, msg, cls, html){
   if(html) f.innerHTML = msg; else f.textContent = msg;
   f.className = 'fb ' + (cls || '');
 }
-function startRecognition(btn){
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let activeRec = null;
+function stopActiveRec(){
+  if(activeRec){ activeRec._stopped = true; try{ activeRec.abort(); }catch(e){} activeRec = null; }
+  document.querySelectorAll('.rbtn.listening').forEach(b => b.classList.remove('listening'));
+}
+// Ask for mic permission first and release it right away, so the speech service starts from a clean state.
+async function primeMic(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return 'ok';
+  try{ const st = await navigator.mediaDevices.getUserMedia({audio: true}); st.getTracks().forEach(t => t.stop()); return 'ok'; }
+  catch(e){ return (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) ? 'denied' : (e && e.name === 'NotFoundError' ? 'nomic' : 'ok'); }
+}
+async function startRecognition(btn){
   const id = btn.dataset.id, expected = btn.dataset.text;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(btn.classList.contains('listening')){ stopActiveRec(); setFb(id, 'Micrófono detenido.', ''); return; }
   if(!window.isSecureContext){ setFb(id, '⚠️ El micrófono necesita https:// (GitHub Pages o Netlify). Sin micrófono no se registra la práctica.', 'incorrect'); return; }
   if(!SR){ setFb(id, 'Este navegador no soporta reconocimiento de voz. Usa Chrome o Edge: la práctica solo cuenta hablando.', 'incorrect'); return; }
-  const r = new SR();
-  r.lang = CFG.code; r.maxAlternatives = 3; r.interimResults = false;
-  btn.classList.add('listening'); setFb(id, '🎤 Escuchando… di la frase', '');
-  r.onresult = e => {
-    const alts = Array.from(e.results[0]).map(x => x.transcript);
-    if(alts.some(a => closeEnough(a, expected))){ setFb(id, '✅ ¡Correcto! — ' + alts[0], 'correct'); registerPlay(id); }
-    else setFb(id, '❌ Se entendió: “' + alts[0] + '” — intenta de nuevo', 'incorrect');
+
+  stopActiveRec();
+  // The device voice and the microphone fight over the audio channel (a common cause of "aborted"), so silence playback first.
+  if('speechSynthesis' in window) speechSynthesis.cancel();
+  document.querySelectorAll('.rbtn.playing').forEach(b => b.classList.remove('playing'));
+  btn.classList.add('listening'); setFb(id, '🎤 Preparando micrófono…', '');
+
+  const perm = await primeMic();
+  if(!btn.classList.contains('listening')) return;           // user tapped again to cancel
+  if(perm === 'denied'){ btn.classList.remove('listening'); setFb(id, 'Permite el micrófono para este sitio (candado de la barra de direcciones → Permisos) y vuelve a tocar 🎤.', 'incorrect'); return; }
+  if(perm === 'nomic'){ btn.classList.remove('listening'); setFb(id, 'No se encontró ningún micrófono en este dispositivo.', 'incorrect'); return; }
+  await sleep(350);
+  if(!btn.classList.contains('listening')) return;
+
+  const MAX_TRIES = 3;
+  const run = attempt => {
+    const r = new SR();
+    activeRec = r;
+    r.lang = CFG.code; r.maxAlternatives = 3; r.interimResults = false; r.continuous = false;
+    let gotResult = false, started = false;
+    const giveUp = (msg) => { if(activeRec === r) activeRec = null; btn.classList.remove('listening'); setFb(id, msg, 'incorrect'); };
+    const startTimer = setTimeout(() => { if(!started && !r._stopped){ r._stopped = true; try{ r.abort(); }catch(e){} giveUp('El micrófono no respondió. Toca 🎤 para reintentar.'); } }, 7000);
+
+    r.onstart = () => { started = true; clearTimeout(startTimer); setFb(id, '🎤 Escuchando… di la frase ahora', ''); };
+    r.onresult = e => {
+      gotResult = true;
+      const alts = Array.from(e.results[0]).map(x => x.transcript);
+      if(alts.some(a => closeEnough(a, expected))){ setFb(id, '✅ ¡Correcto! — ' + alts[0], 'correct'); registerPlay(id); }
+      else setFb(id, '❌ Se entendió: “' + alts[0] + '” — intenta de nuevo', 'incorrect');
+    };
+    r.onerror = e => {
+      clearTimeout(startTimer);
+      if(r._stopped) return;                                   // we aborted it ourselves
+      if(e.error === 'aborted'){
+        if(attempt < MAX_TRIES){ r._stopped = true; setFb(id, '🎤 Reconectando micrófono…', ''); setTimeout(() => { if(btn.classList.contains('listening')) run(attempt + 1); }, 500 * attempt); return; }
+        giveUp('El navegador siguió interrumpiendo el micrófono. Desconecta los auriculares Bluetooth, cierra apps que usen el micrófono (llamadas, grabadores) y toca 🎤 otra vez. Si persiste, recarga la página.');
+      } else if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+        giveUp('Permite el micrófono para este sitio (candado de la barra de direcciones → Permisos) y vuelve a tocar 🎤.');
+      } else if(e.error === 'no-speech'){
+        giveUp('No se detectó voz — toca 🎤 y habla enseguida.');
+      } else if(e.error === 'audio-capture'){
+        giveUp('No se pudo acceder al micrófono. Revisa que otra app no lo esté usando.');
+      } else if(e.error === 'network'){
+        giveUp('El reconocimiento de voz necesita conexión a internet. Revisa tu red e inténtalo de nuevo.');
+      } else if(e.error === 'language-not-supported'){
+        giveUp('Tu dispositivo no tiene reconocimiento de voz para este idioma (' + CFG.code + ').');
+      } else giveUp('Error de reconocimiento: ' + e.error);
+    };
+    r.onend = () => {
+      clearTimeout(startTimer);
+      if(r._stopped) return;
+      if(activeRec === r) activeRec = null;
+      btn.classList.remove('listening');
+      if(!gotResult && started){ const f = document.getElementById('fb-' + id); if(f && /Escuchando/.test(f.textContent)) setFb(id, 'No se escuchó nada — toca 🎤 y vuelve a intentar.', 'incorrect'); }
+    };
+    try{ r.start(); }catch(err){
+      clearTimeout(startTimer);
+      if(attempt < MAX_TRIES){ setTimeout(() => { if(btn.classList.contains('listening')) run(attempt + 1); }, 400); }
+      else giveUp('No se pudo iniciar el micrófono. Recarga la página e inténtalo de nuevo.');
+    }
   };
-  r.onerror = e => {
-    btn.classList.remove('listening');
-    if(e.error === 'not-allowed' || e.error === 'service-not-allowed') setFb(id, 'Permite el micrófono para poder practicar.', 'incorrect');
-    else if(e.error === 'no-speech') setFb(id, 'No se detectó voz — intenta de nuevo.', 'incorrect');
-    else setFb(id, 'Error de reconocimiento: ' + e.error, 'incorrect');
-  };
-  r.onend = () => btn.classList.remove('listening');
-  try{ r.start(); }catch(e){ btn.classList.remove('listening'); }
+  run(1);
 }
 
 /* ---------- overlays ---------- */
