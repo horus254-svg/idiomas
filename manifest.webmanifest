@@ -1,7 +1,7 @@
 {
   "name": "Aprende Idiomas",
   "short_name": "Idiomas",
-  "description": "Aprende 8 idiomas con lecciones cortas, repaso inteligente y audio.",
+  "description": "Aprende 9 idiomas con lecciones cortas, repaso inteligente y audio.",
   "lang": "es",
   "start_url": "./index.html",
   "scope": "./",

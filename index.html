@@ -4,129 +4,225 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#f6f4ef">
+<meta name="description" content="Aprende 9 idiomas desde el español con lecciones cortas, repaso inteligente, audio y micrófono. Gratis y sin cuentas.">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Aprende idiomas</title>
 <style>
-:root{--bg:#f6f4ef;--surface:#fff;--surface2:#f1eee8;--text:#1d1b18;--muted:#6f6b63;--line:#e6e2d9;--shadow:0 1px 2px rgba(20,16,10,.06),0 8px 22px rgba(20,16,10,.06)}
-body.dark{--bg:#0e0e10;--surface:#17171a;--surface2:#222226;--text:#f3f1ec;--muted:#9d9a92;--line:#2c2c31;--shadow:0 1px 2px rgba(0,0,0,.5),0 10px 26px rgba(0,0,0,.35)}
+:root{--bg:#f6f4ef;--surface:#fff;--surface2:#f1eee8;--text:#1d1b18;--muted:#6f6b63;--line:#e6e2d9;--ok:#16a34a;--bad:#dc2626;--shadow:0 1px 2px rgba(20,16,10,.06),0 8px 22px rgba(20,16,10,.06)}
+body.dark{--bg:#0e0e10;--surface:#17171a;--surface2:#222226;--text:#f3f1ec;--muted:#9d9a92;--line:#2c2c31;--ok:#34d399;--bad:#f87171;--shadow:0 1px 2px rgba(0,0,0,.5),0 10px 26px rgba(0,0,0,.35)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45;transition:background .25s,color .25s}
-.wrap{max-width:900px;margin:0 auto;padding:max(22px,env(safe-area-inset-top)) 16px 60px}
-.top{display:flex;justify-content:flex-end;gap:8px}
-.tt{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:1.1rem;cursor:pointer;color:var(--text)}
-header{text-align:center;margin:6px 0 24px}
-h1{font-size:clamp(2rem,7vw,3rem);line-height:1.08;letter-spacing:-.02em;margin:0 0 10px}
-h1 em{font-style:normal;background:linear-gradient(90deg,#e11d3e,#be185d,#4f46e5,#0e7490,#15803d);-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{color:var(--muted);max-width:500px;margin:0 auto;font-size:1rem}
-.summary{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
-.pill{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:7px 14px;font-size:.88rem;color:var(--muted)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid color-mix(in srgb,#4f46e5 55%,transparent);outline-offset:2px}
+.wrap{max-width:900px;margin:0 auto;padding:max(16px,env(safe-area-inset-top)) 16px max(40px,env(safe-area-inset-bottom))}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800}
+.logo img{width:30px;height:30px;border-radius:9px}
+.tt{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:1.1rem;color:var(--text)}
+header{text-align:center;margin:18px 0 20px}
+h1{font-size:clamp(1.9rem,7vw,2.8rem);line-height:1.08;letter-spacing:-.02em;margin:0 0 10px}
+h1 em{font-style:normal;background:linear-gradient(90deg,#e11d3e,#be185d,#7c3aed,#4f46e5,#0e7490,#15803d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);max-width:520px;margin:0 auto;font-size:.98rem}
+.summary{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:16px}
+.pill{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 13px;font-size:.86rem;color:var(--muted)}
 .pill b{color:var(--text)}
-.install{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
-.install img{width:44px;height:44px;border-radius:12px}
-.install div{flex:1;font-size:.92rem}
-.install b{display:block;font-size:1rem}
-.ibtn{border:0;background:#4f46e5;color:#fff;font-weight:800;border-radius:12px;padding:10px 14px;cursor:pointer;font:inherit;font-weight:800}
-.grid{display:grid;grid-template-columns:1fr;gap:12px}
-@media(min-width:620px){.grid{grid-template-columns:1fr 1fr}}
-.card{--c:#e11d3e;position:relative;display:block;text-decoration:none;color:inherit;background:linear-gradient(150deg,color-mix(in srgb,var(--c) 13%,var(--surface)),var(--surface) 65%);border:1px solid var(--line);border-radius:22px;padding:18px 18px 16px;box-shadow:var(--shadow);transition:transform .18s,border-color .18s;overflow:hidden}
+.pill.hot{border-color:color-mix(in srgb,#ea580c 45%,var(--line));color:#ea580c}
+.pill.hot b{color:#ea580c}
+
+/* continue card */
+.resume{--c:#4f46e5;display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 70%,#000));border-radius:22px;padding:16px 18px;box-shadow:0 10px 30px color-mix(in srgb,var(--c) 35%,transparent);margin-bottom:22px;transition:transform .15s}
+.resume:hover{transform:translateY(-2px)}
+.resume .rf{font-size:2.4rem;line-height:1}
+.resume .rb{flex:1;min-width:0}
+.resume .rk{font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.resume .rn{font-weight:800;font-size:1.2rem}
+.resume .rs{font-size:.86rem;opacity:.9}
+.resume .rgo{background:#fff;color:var(--c);font-weight:900;border-radius:14px;padding:10px 14px;white-space:nowrap}
+
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 10px}
+.sec h2{font-size:.8rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0}
+.grid{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:560px){.grid{grid-template-columns:1fr 1fr}}
+@media(min-width:860px){.grid{grid-template-columns:1fr 1fr 1fr}}
+.card{--c:#e11d3e;position:relative;display:flex;flex-direction:column;gap:10px;text-decoration:none;color:inherit;background:linear-gradient(150deg,color-mix(in srgb,var(--c) 11%,var(--surface)),var(--surface) 60%);border:1px solid var(--line);border-radius:20px;padding:14px 16px;box-shadow:var(--shadow);transition:transform .18s,border-color .18s}
 .card:hover{transform:translateY(-3px);border-color:var(--c)}
-.row{display:flex;align-items:center;gap:14px}
-.flag{font-size:2.3rem;line-height:1}
-.nm{font-weight:800;font-size:1.15rem}
-.nat{color:var(--c);font-weight:700;font-size:1.05rem;margin-top:1px}
-.cjk{font-family:"Noto Serif CJK SC","Noto Serif CJK JP","Noto Serif CJK KR","Songti SC","Hiragino Mincho ProN",serif}
-.desc{color:var(--muted);font-size:.9rem;margin:12px 0 14px}
-.bar{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px}
+.flag{font-size:2rem;line-height:1}
+.nmw{flex:1;min-width:0}
+.nm{font-weight:800;font-size:1.08rem}
+.nat{color:var(--c);font-weight:700;font-size:.95rem}
+.cjk{font-family:"Noto Serif CJK SC","Noto Serif CJK JP","Noto Serif CJK KR","Songti SC","Hiragino Mincho ProN","Apple SD Gothic Neo",serif}
+.desc{color:var(--muted);font-size:.86rem;margin:0}
+.bar{height:7px;border-radius:99px;background:var(--surface2);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--c);border-radius:99px;transition:width .6s}
-.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;font-size:.82rem;color:var(--muted)}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.8rem;color:var(--muted)}
 .go{font-weight:800;color:var(--c);white-space:nowrap}
-.tag{position:absolute;top:14px;right:14px;background:var(--c);color:#fff;font-size:.7rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:99px}
+.tag{background:var(--c);color:#fff;font-size:.66rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:99px;align-self:flex-start}
 .due{color:var(--c);font-weight:800}
-.foot{text-align:center;color:var(--muted);font-size:.82rem;margin-top:30px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--shadow);margin-top:24px}
+.panel h3{margin:0 0 4px;font-size:1.05rem}
+.panel p{margin:0 0 12px;color:var(--muted);font-size:.9rem}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn{flex:1;min-width:150px;border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:11px 14px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:#4f46e5;color:#fff;border-color:transparent}
+.install{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px;margin-bottom:18px;box-shadow:var(--shadow)}
+.install img{width:42px;height:42px;border-radius:12px}
+.install div{flex:1;font-size:.9rem}
+.install b{display:block;font-size:.98rem}
+.install .btn{flex:none;min-width:0}
+.x{border:0;background:none;color:var(--muted);font-size:1.1rem;padding:6px}
+.foot{text-align:center;color:var(--muted);font-size:.8rem;margin-top:26px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--text);color:var(--bg);padding:11px 18px;border-radius:99px;font-weight:700;font-size:.9rem;opacity:0;pointer-events:none;transition:all .3s;z-index:95;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top"><button class="tt" id="tt" aria-label="Cambiar tema">🌙</button></div>
+  <div class="top"><div class="logo"><img src="icon-192.png" alt="">Idiomas</div><button class="tt" id="tt" aria-label="Cambiar tema">🌙</button></div>
   <header>
     <h1>Aprende <em>idiomas</em><br>a tu ritmo</h1>
     <p class="sub">Lecciones cortas, repaso inteligente y audio en cada palabra. Gratis y sin cuentas: tu progreso se guarda en este dispositivo.</p>
     <div class="summary" id="summary"></div>
   </header>
+
   <div class="install" id="installBox" hidden>
     <img src="icon-192.png" alt="">
     <div><b>Instálala en tu teléfono</b><span id="installTxt">Ábrela como una app, incluso sin internet.</span></div>
-    <button class="ibtn" id="installBtn" hidden>Instalar</button>
+    <button class="btn primary" id="installBtn" hidden>Instalar</button>
+    <button class="x" id="installX" aria-label="Ocultar">✕</button>
   </div>
+
+  <a class="resume" id="resume" hidden></a>
+
+  <div class="sec"><h2>Elige un idioma</h2></div>
   <div class="grid" id="grid"></div>
-  <p class="foot">Funciona mejor en Chrome o Edge · el micrófono necesita https://</p>
+
+  <section class="panel" aria-labelledby="bkT">
+    <h3 id="bkT">💾 Copia de seguridad</h3>
+    <p>Tu progreso vive solo en este navegador. Descarga una copia para no perderlo o para pasarlo a otro teléfono o computadora.</p>
+    <div class="btns">
+      <button class="btn" id="bkDown">⬇️ Descargar copia</button>
+      <button class="btn" id="bkUp">⬆️ Restaurar copia</button>
+      <input type="file" id="bkFile" accept="application/json,.json" hidden>
+    </div>
+    <p id="bkLast" style="margin:10px 0 0;font-size:.82rem"></p>
+  </section>
+
+  <p class="foot">Funciona mejor en Chrome, Edge o Safari · el micrófono necesita https://</p>
 </div>
+<div class="toast" id="toast" role="status"></div>
+<script src="langs.js"></script>
 <script>
-const LANGS = [
-  {code:'zh',n:'Chino',nat:'中文',f:'🇨🇳',key:'chinese-plan',c:'#e11d3e',cjk:1,d:'Tonos, caracteres y frases del día a día.'},
-  {code:'en',n:'Inglés',nat:'English',f:'🇬🇧',key:'english-plan',c:'#2563eb',d:'Pronunciación guiada y conversación real.'},
-  {code:'pt',n:'Portugués',nat:'Português',f:'🇧🇷',key:'portuguese-plan',c:'#15803d',d:'Portugués de Brasil, claro y práctico.'},
-  {code:'ko',n:'Coreano',nat:'한국어',f:'🇰🇷',key:'korean-plan',c:'#4f46e5',cjk:1,d:'Hangul, romanización y frases útiles.'},
-  {code:'ru',n:'Ruso',nat:'Русский',f:'🇷🇺',key:'russian-plan',c:'#0e7490',d:'Cirílico con transliteración y audio.'},
-  {code:'ja',n:'Japonés',nat:'日本語',f:'🇯🇵',key:'japanese-plan',c:'#be185d',cjk:1,d:'Kana, kanji y frases con romaji.'},
-  {code:'it',n:'Italiano',nat:'Italiano',f:'🇮🇹',key:'italian-plan',c:'#b45309',d:'Pronunciación, vocabulario y frases cotidianas.'},
-  {code:'fr',n:'Francés',nat:'Français',f:'🇫🇷',key:'french-plan',c:'#1d4ed8',d:'Pronunciación, vocabulario y frases cotidianas.'}
-];
-const TOTAL = 793;
+const LANGS = window.LANGS, TOTAL = window.LANG_TOTAL || 793;
+const $ = id => document.getElementById(id);
 function get(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function set(k, v){try{localStorage.setItem(k, v)}catch(e){}}
 function getJSON(k){try{return JSON.parse(get(k)||'null')}catch(e){return null}}
+function esc(s){return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function day(o){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-o);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),2600)}
 
-let totalLearned = 0, totalDue = 0, bestStreak = 0, recent = null, recentDate = '';
-const today = day(0);
-const info = LANGS.map(L => {
-  let learned = 0, due = 0, streak = 0, last = '';
-  const srs = getJSON(L.key + '-srs-v1');
-  if(srs){ for(const id in srs){ learned++; if(srs[id].d <= today) due++; } }
-  else { const old = getJSON(L.key + '-progress-v1'); if(old) for(const k in old) if(k[0]==='a' && old[k] > 0) learned++; }
-  const s = getJSON(L.key + '-streak');
-  if(s){ last = s.lastDate || ''; if(last === day(0) || last === day(1)) streak = s.count; }
-  totalLearned += learned; totalDue += due; bestStreak = Math.max(bestStreak, streak);
-  if(last && last > recentDate){ recentDate = last; recent = L.code; }
-  return {learned, due, streak};
-});
+function render(){
+  let totalLearned = 0, totalDue = 0, bestStreak = 0, recent = null, recentDate = '', exToday = 0;
+  const today = day(0);
+  const info = LANGS.map(L => {
+    let learned = 0, due = 0, streak = 0, last = '', done = 0;
+    const srs = getJSON(L.key + '-srs-v1');
+    if(srs){ for(const id in srs){ learned++; if(srs[id].d <= today) due++; } }
+    else { const old = getJSON(L.key + '-progress-v1'); if(old) for(const k in old) if(k[0]==='a' && old[k] > 0) learned++; }
+    const path = getJSON(L.key + '-path-v1'); if(path && path.done) done = Object.keys(path.done).length;
+    const s = getJSON(L.key + '-streak');
+    if(s){ last = s.lastDate || ''; if(last === day(0) || last === day(1)) streak = s.count; }
+    const d = getJSON(L.key + '-days-v1'); if(d && d[today]) exToday += d[today].ex || 0;
+    totalLearned += learned; totalDue += due; bestStreak = Math.max(bestStreak, streak);
+    if(last && last > recentDate){ recentDate = last; recent = L.code; }
+    return {learned, due, streak, done};
+  });
+  const lastOpened = get('langapp-last');
+  if(!recent && lastOpened && LANGS.some(l => l.code === lastOpened)) recent = lastOpened;
 
-const grid = document.getElementById('grid');
-LANGS.forEach((L, i) => {
-  const {learned, due, streak} = info[i], pct = Math.min(100, Math.round(learned / TOTAL * 100));
-  const a = document.createElement('a');
-  a.className = 'card'; a.href = 'app.html?lang=' + L.code; a.style.setProperty('--c', L.c);
-  a.innerHTML = `${recent === L.code ? '<span class="tag">Continuar</span>' : ''}
-    <div class="row"><div class="flag">${L.f}</div><div><div class="nm">${L.n}</div><div class="nat ${L.cjk ? 'cjk' : ''}">${L.nat}</div></div></div>
-    <p class="desc">${L.d}</p>
-    <div class="bar"><i style="width:${pct}%"></i></div>
-    <div class="meta"><span>${learned ? learned + ' aprendidas' : TOTAL + ' palabras y frases'}${due ? ` · <span class="due">${due} por repasar</span>` : ''}${streak ? ' · 🔥 ' + streak : ''}</span><span class="go">${learned ? 'Seguir →' : 'Empezar →'}</span></div>`;
-  grid.appendChild(a);
-});
-document.getElementById('summary').innerHTML = `<span class="pill"><b>${LANGS.length}</b> idiomas</span><span class="pill"><b>${totalLearned}</b> palabras aprendidas</span>`
-  + (totalDue ? `<span class="pill"><b>${totalDue}</b> repasos hoy</span>` : '') + (bestStreak ? `<span class="pill">🔥 <b>${bestStreak}</b> días de racha</span>` : '');
+  // "Continuar" card
+  const rb = $('resume');
+  if(recent){
+    const i = LANGS.findIndex(l => l.code === recent), L = LANGS[i], s = info[i];
+    rb.hidden = false; rb.href = 'app.html?lang=' + L.code; rb.style.setProperty('--c', L.c);
+    rb.innerHTML = `<span class="rf">${L.f}</span><span class="rb"><span class="rk">Continuar</span><div class="rn">${esc(L.n)}</div>
+      <div class="rs">${s.due ? s.due + ' repasos pendientes' : s.learned + ' palabras aprendidas'}${s.streak ? ' · 🔥 ' + s.streak + (s.streak === 1 ? ' día' : ' días') : ''}</div></span><span class="rgo">${s.due ? 'Repasar' : 'Seguir'} →</span>`;
+  } else rb.hidden = true;
 
-const tt = document.getElementById('tt');
-function setDark(d){document.body.classList.toggle('dark', d); tt.textContent = d ? '☀️' : '🌙'; try{localStorage.setItem('langapp-theme', d ? 'dark' : 'light')}catch(e){}
+  $('grid').innerHTML = LANGS.map((L, i) => {
+    const {learned, due, streak} = info[i], pct = Math.min(100, Math.round(learned / TOTAL * 100));
+    return `<a class="card" href="app.html?lang=${L.code}" style="--c:${L.c}">
+      <div class="row"><div class="flag">${L.f}</div><div class="nmw"><div class="nm">${esc(L.n)}</div><div class="nat ${L.cjk ? 'cjk' : ''}">${esc(L.nat)}</div></div>${L.isNew && !learned ? '<span class="tag">Nuevo</span>' : ''}</div>
+      <p class="desc">${esc(L.d)}</p>
+      <div class="bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progreso en ${esc(L.n)}"><i style="width:${pct}%"></i></div>
+      <div class="meta"><span>${learned ? `${learned}/${TOTAL} · ${pct}%` : TOTAL + ' palabras y frases'}${due ? ` · <span class="due">${due} por repasar</span>` : ''}${streak ? ' · 🔥 ' + streak : ''}</span><span class="go">${learned ? 'Seguir →' : 'Empezar →'}</span></div></a>`;
+  }).join('');
+
+  $('summary').innerHTML = `<span class="pill"><b>${LANGS.length}</b> idiomas</span><span class="pill"><b>${totalLearned}</b> palabras aprendidas</span>`
+    + (totalDue ? `<span class="pill"><b>${totalDue}</b> repasos hoy</span>` : '')
+    + (exToday ? `<span class="pill"><b>${exToday}</b> ejercicios hoy</span>` : '')
+    + (bestStreak ? `<span class="pill hot">🔥 <b>${bestStreak}</b> ${bestStreak === 1 ? 'día' : 'días'} de racha</span>` : '');
+  const bl = get('langapp-backup-date');
+  $('bkLast').textContent = bl ? 'Última copia descargada: ' + new Date(bl).toLocaleDateString('es', {day: 'numeric', month: 'long', year: 'numeric'}) : '';
+}
+render();
+// Coming back from a lesson (bfcache) → refresh numbers.
+window.addEventListener('pageshow', e => { if(e.persisted) render(); });
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') render(); });
+
+/* ---------- theme ---------- */
+const tt = $('tt');
+function setDark(d){document.body.classList.toggle('dark', d); tt.textContent = d ? '☀️' : '🌙'; tt.setAttribute('aria-label', d ? 'Usar tema claro' : 'Usar tema oscuro');
   document.querySelector('meta[name=theme-color]').setAttribute('content', d ? '#0e0e10' : '#f6f4ef');}
 const saved = get('langapp-theme') || get('hub-theme');
 setDark(saved ? saved === 'dark' : !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches));
-tt.onclick = () => setDark(!document.body.classList.contains('dark'));
+tt.onclick = () => { const d = !document.body.classList.contains('dark'); setDark(d); set('langapp-theme', d ? 'dark' : 'light'); };
 
-// Offline + install
+/* ---------- backup ---------- */
+const PREFIXES = LANGS.map(l => l.key + '-').concat(['langapp-', 'hub-theme']);
+const ours = k => PREFIXES.some(p => k.startsWith(p)) && k !== 'langapp-backup-date';
+$('bkDown').onclick = () => {
+  const data = {};
+  try{ for(let i = 0; i < localStorage.length; i++){ const k = localStorage.key(i); if(ours(k)) data[k] = localStorage.getItem(k); } }catch(e){}
+  if(!Object.keys(data).length){ toast('Todavía no hay progreso para guardar'); return; }
+  const blob = new Blob([JSON.stringify({app: 'idiomas', v: 1, date: new Date().toISOString(), data}, null, 1)], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'idiomas-progreso-' + day(0) + '.json';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  set('langapp-backup-date', new Date().toISOString()); render(); toast('Copia descargada ✅');
+};
+$('bkUp').onclick = () => $('bkFile').click();
+$('bkFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if(!f) return;
+  let j; try{ j = JSON.parse(await f.text()); }catch(err){ toast('Ese archivo no es una copia válida'); return; }
+  const data = j && j.app === 'idiomas' && j.data;
+  const keys = data ? Object.keys(data).filter(k => ours(k) && typeof data[k] === 'string') : [];
+  if(!keys.length){ toast('Ese archivo no es una copia de esta app'); return; }
+  const when = j.date ? new Date(j.date).toLocaleDateString('es', {day: 'numeric', month: 'long', year: 'numeric'}) : 'fecha desconocida';
+  if(!confirm(`¿Restaurar la copia del ${when}? Reemplazará el progreso actual de los idiomas que contiene.`)) return;
+  keys.forEach(k => set(k, data[k]));
+  const th = get('langapp-theme'); if(th) setDark(th === 'dark');
+  render(); toast('Progreso restaurado ✅');
+};
+
+/* ---------- offline + install ---------- */
 if('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone;
-const box = document.getElementById('installBox'), ib = document.getElementById('installBtn');
+const box = $('installBox'), ib = $('installBtn');
+const hidInstall = () => get('langapp-install-hide') === '1';
 let deferred = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; box.hidden = false; ib.hidden = false; });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; if(!hidInstall()){ box.hidden = false; ib.hidden = false; } });
 ib.onclick = async () => { if(!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; box.hidden = true; };
-if(!standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)){
+$('installX').onclick = () => { box.hidden = true; set('langapp-install-hide', '1'); };
+if(!standalone && !hidInstall() && /iphone|ipad|ipod/i.test(navigator.userAgent)){
   box.hidden = false;
-  document.getElementById('installTxt').textContent = 'En Safari toca Compartir ⬆️ y luego “Agregar a inicio”.';
+  $('installTxt').textContent = 'En Safari toca Compartir ⬆️ y luego «Agregar a inicio».';
 }
 </script>
 </body>

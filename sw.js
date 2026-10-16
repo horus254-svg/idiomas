@@ -1,9 +1,10 @@
 // Offline support: keeps the app files cached so it opens without internet.
 // Bump VERSION whenever any file changes so phones pick up the update.
-const VERSION = 'idiomas-v3.0.1';
+const VERSION = 'idiomas-v3.1.0';
 const FILES = [
   './', './index.html', './app.html', './manifest.webmanifest', './icon-192.png', './icon-512.png',
-  './lang_zh.js', './lang_en.js', './lang_pt.js', './lang_ko.js', './lang_ru.js', './lang_ja.js', './lang_it.js', './lang_fr.js'
+  './langs.js',
+  './lang_zh.js', './lang_en.js', './lang_pt.js', './lang_ko.js', './lang_ru.js', './lang_ja.js', './lang_it.js', './lang_fr.js', './lang_de.js'
 ];
 
 self.addEventListener('install', e => {

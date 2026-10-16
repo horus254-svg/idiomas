@@ -1,41 +1,41 @@
 # Idiomas
 
-Planes de un año para aprender 9 idiomas desde el español: chino, inglés, portugués, coreano, ruso, japonés, italiano, francés y alemán.
+Cursos para aprender 9 idiomas desde el español: inglés, portugués, francés, italiano, alemán, chino, japonés, coreano y ruso.
 
 ## Qué incluye
 
-- **Unas 480 frases y palabras por idioma**, en 13 secciones: pronunciación/alfabeto, las 4 fases del plan, vocabulario temático, situaciones reales (hotel, farmacia, dinero, teléfono, quejas, hobbies) y hora y calendario.
-- **▶ Audio** con la voz del dispositivo (con respaldo en línea) y velocidad ajustable; 🐢 para oír más despacio.
-- **🎤 Micrófono**: compara palabra por palabra con tolerancia (tildes, signos, números en cifra, hiragana/katakana; en chino compara el sonido en pinyin). Marca en verde lo reconocido y en rojo lo que faltó. Exigencia ajustable en ⚙️ Ajustes.
-- **🔁 Repaso de hoy**: repetición espaciada. Cada frase que aciertas vuelve a los 1, 2, 4, 8, 16… días.
-- **🎯 Práctica** con 5 modos: escuchar y elegir, leer y elegir, del español al idioma, dictado y «dilo tú». Puedes practicar una sección, lo ya practicado, lo difícil, tus favoritas o todo.
-- **📊 Progreso**: racha, XP y meta diaria, calendario de actividad y dominio por sección.
-- **Buscador**, ★ favoritas, modo oscuro, ocultar pronunciación o traducción (modo autoevaluación).
-- **Copia de seguridad** del progreso (descargar/restaurar) desde la página de inicio.
+- **793 palabras y frases por idioma** en 32 unidades con lecciones cortas, notas de gramática y un camino que se va desbloqueando (o «⏭ Saltar» con una prueba de 10 preguntas).
+- **10 diálogos por idioma** con dos voces, texto/traducción ocultables y preguntas de comprensión.
+- **Ejercicios variados**: elegir el significado, escuchar y elegir, del español al idioma, armar la frase, dictado y «dilo en voz alta» con el micrófono.
+- **🔁 Repaso espaciado**: cada palabra vuelve justo antes de que la olvides (1 → 3 → ×facilidad días); los fallos vuelven al día siguiente.
+- **🎯 Meta diaria** (10/20/30/50 ejercicios) con anillo de progreso, y **calendario de actividad** de las últimas 15 semanas con racha actual y mejor racha.
+- **★ Favoritas**: guarda palabras desde la lista o tras cualquier respuesta, fíltralas y practícalas aparte.
+- **Atajos de teclado** en computadora: `1`–`4` eligen opción, `Espacio` repite el audio, `L` lo repite lento, `Enter` continúa y `Esc` sale.
+- **💾 Copia de seguridad**: descarga y restaura todo tu progreso (todos los idiomas) desde la portada.
+- Modo oscuro, voz y velocidad ajustables, funciona sin conexión e instalable como app (PWA).
 
 ## Estructura
 
 ```
-index.html                 Página de inicio (elige idioma, progreso, copia de seguridad)
-<idioma>_fluency_plan.html Página de cada idioma (solo carga sus datos y el motor)
-assets/app.js              Motor compartido (tarjetas, voz, micrófono, repaso, práctica…)
-assets/app.css             Estilos compartidos
-assets/catalog.js          Lista de idiomas para la página de inicio
-data/<código>.js           Contenido de cada idioma
+index.html                  Portada: elegir idioma, continuar, resumen y copia de seguridad
+app.html                    La app (se abre como app.html?lang=<código>)
+langs.js                    Catálogo de idiomas que usan la portada y la app
+lang_<código>.js            Contenido de cada idioma (cfg, units, items, dialogues)
+<idioma>_fluency_plan.html  Redirecciones desde las direcciones antiguas
+sw.js                       Caché sin conexión (sube VERSION al cambiar archivos)
 ```
 
 ## Editar el contenido
 
-Cada `data/<código>.js` define `window.LANG_DATA` con sus secciones (`phases`). Cada frase es `{"t": texto, "r": pronunciación, "es": traducción}`.
+Cada `lang_<código>.js` define `window.LANG_DATA = {cfg, units, items, dialogues}`.
+Cada frase es `{"t": texto, "r": pronunciación, "es": traducción, "u": unidad}` y se identifica por su id (`a-…`), que es el mismo en todos los idiomas.
 
-El progreso se guarda por **posición** de cada frase. Para no mezclar el progreso de nadie:
-- añade frases nuevas **al final** de un grupo, o crea un grupo o sección nuevos al final;
-- no borres ni reordenes frases existentes (corregir el texto de una sí se puede).
+El progreso se guarda por id. No borres ni renombres ids existentes: corrige el texto y añade frases nuevas con ids nuevos.
 
-Si añades frases, actualiza también `total` en `assets/catalog.js`.
+Para añadir un idioma: crea su `lang_<código>.js`, agrégalo a `langs.js` y a la lista de `sw.js`.
 
 ## Publicar
 
 Son archivos estáticos: sirven tal cual en GitHub Pages, Netlify, etc. **El micrófono solo funciona por `https://`** (o en `localhost`), no al abrir el archivo directamente.
 
-El progreso de la versión anterior se conserva: se usan las mismas claves de `localStorage`.
+El progreso de versiones anteriores se conserva: se usan las mismas claves de `localStorage` (incluido el alemán de la versión anterior, que se migra al abrirlo).

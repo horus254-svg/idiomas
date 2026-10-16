@@ -223,6 +223,55 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .toast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top));transform:translate(-50%,-20px);background:var(--text);color:var(--bg);padding:11px 18px;border-radius:99px;font-weight:700;font-size:.9rem;opacity:0;pointer-events:none;transition:all .3s;z-index:95;max-width:90vw;text-align:center}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .loading{display:grid;place-items:center;min-height:60vh;color:var(--muted)}
+
+/* daily goal ring */
+.today-top{display:flex;align-items:center;gap:12px}
+.today-top>div{flex:1;min-width:0}
+.ring{position:relative;width:64px;height:64px;flex:none;border:0;background:none;padding:0;border-radius:50%}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:7}
+.ring .rg-bg{stroke:color-mix(in srgb,var(--accent) 14%,var(--surface2))}
+.ring .rg-fg{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+.ring.met .rg-fg{stroke:var(--ok)}
+.ring .rg-n{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:1.05rem;line-height:1}
+.ring .rg-n small{font-size:.62rem;font-weight:700;color:var(--muted);margin-top:2px}
+.ring.met .rg-n{color:var(--ok)}
+.goalopts{display:grid;gap:8px}
+.goal-hit{display:inline-block;background:color-mix(in srgb,var(--ok) 15%,var(--surface));color:var(--ok);font-weight:800;padding:10px 16px;border-radius:14px;margin-bottom:10px}
+
+/* activity heatmap */
+.act-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.act-head h3{margin:0;font-size:1.1rem}
+.act-head .linkbtn{text-decoration:none;color:var(--accent);padding:4px 0}
+.act-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.act-stats div{background:var(--surface2);border-radius:12px;padding:9px 10px}
+.act-stats b{display:block;font-size:1.1rem}
+.act-stats span{font-size:.74rem;color:var(--muted);font-weight:700}
+.heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;grid-auto-columns:1fr;gap:3px}
+.hm{display:block;aspect-ratio:1;border-radius:3px;background:var(--surface2)}
+.hm.l-1{background:transparent}
+.hm.l1{background:color-mix(in srgb,var(--accent) 28%,var(--surface2))}
+.hm.l2{background:color-mix(in srgb,var(--accent) 60%,var(--surface2))}
+.hm.l3{background:var(--accent)}
+.heat-lg{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.74rem;color:var(--muted);margin-top:8px}
+.hm-scale{display:inline-flex;align-items:center;gap:3px}
+.hm-scale .hm{width:10px;height:10px}
+
+/* favorites & feedback tools */
+.favbtn{border:0;background:none;font-size:1.35rem;line-height:1;color:var(--muted);width:36px;height:42px;padding:0;flex:none}
+.favbtn.on{color:#eab308}
+.favbtn.sm{width:34px;height:34px;font-size:1.25rem}
+.fb-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fb-tools{display:flex;align-items:center;gap:4px}
+.playbtn.sm{width:34px;height:34px;font-size:.8rem}
+kbd{font:inherit;font-size:.68rem;font-weight:800;opacity:.75;border:1px solid rgba(255,255,255,.45);border-radius:6px;padding:1px 5px;margin-left:6px}
+@media(hover:hover) and (pointer:fine){
+  .opts{counter-reset:opt}
+  .opt{position:relative;padding-right:40px}
+  .opt::after{counter-increment:opt;content:counter(opt);position:absolute;right:12px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:7px;border:1.5px solid var(--line);display:grid;place-items:center;font-size:.72rem;color:var(--muted)}
+  .goalopts .opt::after{display:none}
+}
+@media(hover:none){kbd{display:none}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -255,6 +304,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     </div>
     <div class="section-t">Practicar</div>
     <div class="list" id="reviewBtns"></div>
+    <div class="card" id="activity" style="margin-top:18px"></div>
   </section>
 
   <section class="view" id="v-dialogues">
@@ -267,7 +317,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
       <select id="wUnit" aria-label="Unidad"></select>
       <select id="wLevel" aria-label="Nivel">
-        <option value="all">Todas</option><option value="0">Sin aprender</option><option value="1">Aprendiendo</option><option value="2">Firmes</option><option value="3">Dominadas</option>
+        <option value="all">Todas</option><option value="0">Sin aprender</option><option value="1">Aprendiendo</option><option value="2">Firmes</option><option value="3">Dominadas</option><option value="fav">★ Favoritas</option>
       </select>
     </div>
     <div class="muted" id="wCount" style="font-size:.84rem;margin:0 2px 8px"></div>
@@ -294,12 +344,13 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <div class="overlay" id="sheetOv" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast"></div>
 
+<script src="langs.js"></script>
 <script>
 'use strict';
 /* =========================================================
    Boot: load the language file named in ?lang=
    ========================================================= */
-const LANG_OK = ['zh','en','pt','ko','ru','ja','it','fr'];
+const LANG_OK = (window.LANGS || []).map(l => l.code);
 const LANG = new URLSearchParams(location.search).get('lang');
 if(!LANG_OK.includes(LANG)){ location.replace('index.html'); }
 else {
@@ -341,7 +392,8 @@ function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add(
    ========================================================= */
 let D, CFG, ITEMS, UNITS, LESSONS, LESSON_POS, DIALOGUES;
 let K = {};
-let srs = {}, path = {done: {}, dlg: {}, notes: {}}, days = {}, streak = {count: 0, lastDate: null}, prefs = {};
+let srs = {}, path = {done: {}, dlg: {}, notes: {}}, days = {}, streak = {count: 0, lastDate: null}, prefs = {}, fav = new Set();
+const GOALS = [10, 20, 30, 50];
 const MASTERED = 21, FIRM = 3;   // interval thresholds in days
 
 function boot(){
@@ -351,7 +403,7 @@ function boot(){
   Object.keys(ITEMS).forEach(id => { ITEMS[id].id = id; });
   const st = CFG.storage;
   K = {srs: st + '-srs-v1', path: st + '-path-v1', days: st + '-days-v1', streak: st + '-streak', old: st + '-progress-v1',
-       voice: st + '-voice', oldVoice: st + '-progress-v1-voice', rate: st + '-rate', prefs: st + '-prefs-v1'};
+       voice: st + '-voice', oldVoice: st + '-progress-v1-voice', rate: st + '-rate', prefs: st + '-prefs-v1', fav: st + '-fav'};
   document.documentElement.style.setProperty('--accent-l', CFG.accent);
   document.documentElement.style.setProperty('--accent-d', CFG.accentDark);
   document.title = CFG.native + ' — Aprende ' + CFG.nameLower;
@@ -360,7 +412,9 @@ function boot(){
   path = Object.assign({done: {}, dlg: {}, notes: {}}, getJSON(K.path, {}));
   days = getJSON(K.days, {});
   streak = getJSON(K.streak, {count: 0, lastDate: null}) || {count: 0, lastDate: null};
-  prefs = Object.assign({speak: true, sounds: true}, getJSON(K.prefs, {}));
+  prefs = Object.assign({speak: true, sounds: true, goal: 20}, getJSON(K.prefs, {}));
+  fav = new Set((getJSON(K.fav, []) || []).filter(id => ITEMS[id]));
+  setStr('langapp-last', LANG);
   if(!srs){ srs = {}; migrateOld(); }
   initTheme();
   $('loading').hidden = true;
@@ -385,6 +439,21 @@ function migrateOld(){
   if(n){ saveAll(); setTimeout(() => toast('Recuperamos ' + n + ' palabras de tu progreso anterior'), 800); }
 }
 function saveAll(){ setJSON(K.srs, srs); setJSON(K.path, path); setJSON(K.days, days); setJSON(K.streak, streak); setJSON(K.prefs, prefs); }
+function toggleFav(id){
+  if(fav.has(id)) fav.delete(id); else fav.add(id);
+  setJSON(K.fav, Array.from(fav));
+  return fav.has(id);
+}
+function favBtn(id, cls){ const on = fav.has(id); return `<button class="favbtn ${cls || ''} ${on ? 'on' : ''}" data-fav="${id}" aria-pressed="${on}" aria-label="${on ? 'Quitar de favoritas' : 'Guardar en favoritas'}" title="Favorita">${on ? '★' : '☆'}</button>`; }
+function wireFav(root){
+  (root || document).querySelectorAll('[data-fav]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const on = toggleFav(b.dataset.fav);
+    b.classList.toggle('on', on); b.textContent = on ? '★' : '☆'; b.setAttribute('aria-pressed', on);
+    b.setAttribute('aria-label', on ? 'Quitar de favoritas' : 'Guardar en favoritas');
+    toast(on ? '★ Guardada en favoritas' : 'Quitada de favoritas');
+  });
+}
 
 /* ---------- spaced repetition ---------- */
 function level(id){ const s = srs[id]; if(!s) return 0; if(s.i >= MASTERED) return 3; if(s.i >= FIRM) return 2; return 1; }
@@ -420,7 +489,9 @@ function unitStarted(ui){ const p = LESSON_POS[UNITS[ui].lessons[0].id]; return 
 function bumpStreak(){
   const t = today();
   if(streak.lastDate !== t){ streak.count = streak.lastDate === addDays(-1) ? (streak.count || 0) + 1 : 1; streak.lastDate = t; }
+  streak.best = Math.max(streak.best || 0, streak.count || 0);
 }
+function exToday(){ return (days[today()] || {ex: 0}).ex; }
 function streakAlive(){ return streak.lastDate === today() || streak.lastDate === addDays(-1); }
 function logDay(ex, ok){ const t = today(); const d = days[t] || {ex: 0, ok: 0}; d.ex += ex; d.ok += ok; days[t] = d;
   const keys = Object.keys(days).sort(); while(keys.length > 120) delete days[keys.shift()]; }
@@ -435,6 +506,7 @@ function showView(v){
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('show', s.id === 'v-' + v));
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.v === v));
   if(v === 'words') renderWords();
+  if(v === 'review') renderReview();
   window.scrollTo(0, 0);
   if(v === 'learn') scrollToCurrent();
 }
@@ -448,10 +520,14 @@ function renderHeader(){
 }
 
 function renderToday(){
-  const due = dueIds().length, cp = currentPos(), t = days[today()] || {ex: 0};
-  const learned = Object.keys(srs).length;
-  let h = `<div><h2>${streak.lastDate === today() ? '¡Bien hecho hoy! 🎉' : '¡Hola! Tu práctica de hoy'}</h2>
-    <p class="sub">${learned} palabras aprendidas · ${t.ex} ejercicios hoy</p></div><div class="btn-row">`;
+  const due = dueIds().length, cp = currentPos(), ex = exToday(), goal = prefs.goal || 20;
+  const learned = Object.keys(srs).length, pct = Math.min(1, ex / goal), met = ex >= goal;
+  const R = 26, C = 2 * Math.PI * R;
+  let h = `<div class="today-top"><div><h2>${met ? '¡Meta cumplida! 🎉' : streak.lastDate === today() ? '¡Bien, sigue así! 💪' : '¡Hola! Tu práctica de hoy'}</h2>
+    <p class="sub">${learned} de ${Object.keys(ITEMS).length} palabras aprendidas</p></div>
+    <button class="ring ${met ? 'met' : ''}" onclick="openGoal()" aria-label="Meta diaria: ${ex} de ${goal} ejercicios. Cambiar meta">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${R}" class="rg-bg"/><circle cx="32" cy="32" r="${R}" class="rg-fg" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}"/></svg>
+      <span class="rg-n">${met ? '✓' : ex}<small>${met ? ex + '/' + goal : '/' + goal}</small></span></button></div><div class="btn-row">`;
   if(due) h += `<button class="btn primary" onclick="startReview()">🔁 Repasar (${due})</button>`;
   if(cp >= 0) h += `<button class="btn ${due ? '' : 'primary'}" onclick="openLesson(${cp})">▶ ${due ? 'Lección' : 'Continuar'}: ${esc(LESSONS[cp].title)}</button>`;
   else h += `<button class="btn" onclick="startCram()">💪 Práctica extra</button>`;
@@ -512,7 +588,36 @@ function renderReview(){
     <button class="card rowcard" onclick="startCram()" ${learned >= 4 ? '' : 'disabled style="opacity:.6"'}><span class="rc-e">💪</span><span class="rc-b"><span class="rc-t">Práctica extra</span><br><span class="rc-s">Refuerza tus palabras más débiles</span></span></button>
     <button class="card rowcard" onclick="startSpeak()" ${learned >= 4 && sp ? '' : 'disabled style="opacity:.6"'}><span class="rc-e">🎤</span><span class="rc-b"><span class="rc-t">Sesión de pronunciación</span><br><span class="rc-s">${sp ? 'Di en voz alta palabras que ya aprendiste' : speakUnavailableMsg()}</span></span></button>
     <button class="card rowcard" onclick="startListenDrill()" ${learned >= 4 ? '' : 'disabled style="opacity:.6"'}><span class="rc-e">👂</span><span class="rc-b"><span class="rc-t">Entrenar el oído</span><br><span class="rc-s">Escucha y escribe lo que oyes</span></span></button>
+    <button class="card rowcard" onclick="startFav()" ${fav.size >= 2 ? '' : 'disabled style="opacity:.6"'}><span class="rc-e">⭐</span><span class="rc-b"><span class="rc-t">Mis favoritas</span><br><span class="rc-s">${fav.size >= 2 ? fav.size + ' palabras guardadas' : 'Toca ☆ en Palabras o tras una respuesta para guardarlas'}</span></span></button>
     ${learned < 4 ? '<p class="muted" style="margin:4px 2px">Completa tu primera lección para desbloquear la práctica.</p>' : ''}`;
+  renderActivity();
+}
+
+/* ---------- activity calendar (last 15 weeks) ---------- */
+function renderActivity(){
+  const WEEKS = 15, goal = prefs.goal || 20, cells = [];
+  const end = new Date(); end.setHours(12, 0, 0, 0);
+  const dow = (end.getDay() + 6) % 7;                // Monday = 0
+  const start = new Date(end); start.setDate(end.getDate() - dow - (WEEKS - 1) * 7);
+  let active = 0, total = 0, met = 0;
+  for(let k = 0; k < WEEKS * 7; k++){
+    const d = new Date(start); d.setDate(start.getDate() + k);
+    const key = dayStr(d), ex = (days[key] || {ex: 0}).ex, future = d > end;
+    if(ex){ active++; total += ex; if(ex >= goal) met++; }
+    const lv = future ? -1 : !ex ? 0 : ex < goal / 2 ? 1 : ex < goal ? 2 : 3;
+    cells.push(`<i class="hm l${lv}" title="${key}: ${ex} ejercicios"></i>`);
+  }
+  const best = Math.max(streak.best || 0, streakAlive() ? streak.count : 0);
+  $('activity').innerHTML = `<div class="act-head"><h3>Tu actividad</h3><button class="linkbtn" onclick="openGoal()">Meta: ${goal}/día ✎</button></div>
+    <div class="act-stats"><div><b>🔥 ${streakAlive() ? streak.count : 0}</b><span>racha actual</span></div><div><b>🏆 ${best}</b><span>mejor racha</span></div><div><b>🎯 ${met}</b><span>${met === 1 ? 'meta cumplida' : 'metas cumplidas'}</span></div></div>
+    <div class="heat" aria-label="Ejercicios por día en las últimas ${WEEKS} semanas">${cells.join('')}</div>
+    <div class="heat-lg"><span>Últimas ${WEEKS} semanas · ${total} ${total === 1 ? 'ejercicio' : 'ejercicios'} en ${active} ${active === 1 ? 'día' : 'días'}</span><span class="hm-scale">Menos <i class="hm l0"></i><i class="hm l1"></i><i class="hm l2"></i><i class="hm l3"></i> Meta</span></div>`;
+}
+function openGoal(){
+  const g = prefs.goal || 20;
+  openSheet(sheetHead('🎯 Meta diaria') + `<p class="muted" style="margin:0 0 12px">¿Cuántos ejercicios quieres hacer cada día? Una lección son unos 15–25.</p>
+    <div class="goalopts">${GOALS.map(n => `<button class="opt ${n === g ? 'correct' : ''}" data-g="${n}"><b>${n}</b> ejercicios <small>${{10: 'Tranquilo · ~5 min', 20: 'Normal · ~10 min', 30: 'En serio · ~15 min', 50: 'Intenso · ~25 min'}[n]}</small></button>`).join('')}</div>`);
+  $('sheet').querySelectorAll('[data-g]').forEach(b => b.onclick = () => { prefs.goal = +b.dataset.g; saveAll(); closeSheet(); renderAll(); toast('Meta diaria: ' + prefs.goal + ' ejercicios'); });
 }
 
 function renderDialogues(){
@@ -536,15 +641,16 @@ function renderWords(){
     if(uf !== 'all' && +uf !== ui) return;
     u.lessons.forEach(l => l.items.forEach(id => {
       const it = ITEMS[id], lv = level(id);
-      if(lf !== 'all' && +lf !== lv) return;
+      if(lf === 'fav' ? !fav.has(id) : lf !== 'all' && +lf !== lv) return;
       if(q && !cmp(it.t + ' ' + it.r + ' ' + it.es).includes(q)) return;
-      rows.push(`<div class="word"><span class="sdot" style="background:${cols[lv]}"></span><div class="wb"><div class="wt ${CFG.cjk ? 'cjk' : ''}" lang="${CFG.code}">${esc(it.t)}</div>
-        <div class="wr">${esc(it.r)}</div><div class="we">${esc(it.es)}</div></div><button class="playbtn" data-id="${id}" aria-label="Escuchar">▶</button></div>`);
+      rows.push(`<div class="word"><span class="sdot" style="background:${cols[lv]}" title="${['Sin aprender', 'Aprendiendo', 'Firme', 'Dominada'][lv]}"></span><div class="wb"><div class="wt ${CFG.cjk ? 'cjk' : ''}" lang="${CFG.code}">${esc(it.t)}</div>
+        ${it.r && it.r !== it.t ? `<div class="wr">${esc(it.r)}</div>` : ''}<div class="we">${esc(it.es)}</div></div>${favBtn(id)}<button class="playbtn" data-id="${id}" aria-label="Escuchar">▶</button></div>`);
     }));
   });
-  $('wCount').textContent = rows.length + ' resultados';
+  $('wCount').textContent = rows.length + (rows.length === 1 ? ' resultado' : ' resultados') + (lf === 'fav' && !rows.length ? ' · toca ☆ junto a una palabra para guardarla' : '');
   $('wList').innerHTML = rows.length ? rows.slice(0, 400).join('') + (rows.length > 400 ? '<div class="word muted">Mostrando 400. Usa el buscador o el filtro para ver más.</div>' : '') : '<div class="word muted">Sin resultados.</div>';
   $('wList').querySelectorAll('.playbtn').forEach(b => b.onclick = () => playBtn(b, ITEMS[b.dataset.id].t));
+  wireFav($('wList'));
 }
 
 /* =========================================================
@@ -819,6 +925,11 @@ function startCram(){
   if(ids.length < 4){ toast('Completa una lección primero'); return; }
   newSession('cram', 'Práctica extra', reviewSteps(shuffle(ids)));
 }
+function startFav(){
+  const ids = shuffle(Array.from(fav).filter(id => ITEMS[id])).slice(0, 15);
+  if(ids.length < 2){ toast('Guarda al menos 2 palabras con ☆'); return; }
+  newSession('cram', 'Mis favoritas', ids.map(id => ({type: chooseType(id, srs[id] && srs[id].i >= FIRM ? TYPES_RECALL.concat(['listen']) : ['meaning', 'listen', 'reverse']), id})));
+}
 function startSpeak(){
   if(!canSpeak()){ toast(speakUnavailableMsg()); return; }
   const ids = weakest(8); if(ids.length < 4){ toast('Completa una lección primero'); return; }
@@ -1000,9 +1111,11 @@ function answer(ok, note){
   fl.className = 's-foot ' + (ok ? 'ok' : 'bad');
   const title = ok ? pick(['¡Correcto!', '¡Muy bien!', '¡Excelente!', '¡Así se hace!']) : 'Respuesta correcta:';
   const ans = `<b class="${CFG.cjk ? 'cjk' : ''}">${esc(it.t)}</b>${it.r && it.r !== it.t ? ' · ' + esc(it.r) : ''}<br>${esc(it.es)}`;
-  $('sFootIn').innerHTML = `<div class="fb-t">${ok ? '✅ ' : '❌ '}${title}</div>${note ? `<div class="fb-a">${esc(note)}</div>` : ''}${!ok || note || st.type !== 'meaning' ? `<div class="fb-a">${ans}</div>` : ''}
-    <button class="btn primary block" id="contBtn">Continuar</button>`;
+  $('sFootIn').innerHTML = `<div class="fb-row"><div class="fb-t">${ok ? '✅ ' : '❌ '}${title}</div><span class="fb-tools"><button class="playbtn sm" id="fbPlay" aria-label="Escuchar otra vez">▶</button>${favBtn(st.id, 'sm')}</span></div>${note ? `<div class="fb-a">${esc(note)}</div>` : ''}${!ok || note || st.type !== 'meaning' ? `<div class="fb-a">${ans}</div>` : ''}
+    <button class="btn primary block" id="contBtn">Continuar <kbd>Enter</kbd></button>`;
   $('contBtn').onclick = next;
+  $('fbPlay').onclick = () => playBtn($('fbPlay'), it.t);
+  wireFav($('sFootIn'));
   setTimeout(() => { const c = $('contBtn'); if(c) c.focus(); }, 30);
   if(st.type !== 'speak' && st.type !== 'listen' && st.type !== 'dictation') speak(it.t);
 }
@@ -1036,7 +1149,9 @@ function finishSession(){
       });
     }
   } else applyResults(true);
+  const exBefore = exToday(), goal = prefs.goal || 20;
   logDay(S.answered, S.correct);
+  const goalNow = exBefore < goal && exToday() >= goal;
   const wasToday = streak.lastDate === today();
   if(S.answered) bumpStreak();
   saveAll();
@@ -1051,6 +1166,7 @@ function finishSession(){
   renderBar(); $('sBar').style.width = '100%';
   $('sBody').innerHTML = `<div class="end"><div class="emo">${emo}</div><h2>${h}</h2><p class="muted">${sub}</p>
     <div class="endstats"><div><b>${pct}%</b><span>aciertos</span></div><div><b>${S.answered}</b><span>ejercicios</span></div><div><b>🔥 ${streak.count}</b><span>${!wasToday && S.answered ? '¡racha +1!' : 'racha'}</span></div></div>
+    ${goalNow ? `<div class="goal-hit">🎯 ¡Cumpliste tu meta de hoy! (${goal} ejercicios)</div>` : exToday() < goal ? `<p class="muted" style="font-size:.9rem">Meta de hoy: ${exToday()} de ${goal} ejercicios</p>` : ''}
     <p class="muted" style="font-size:.86rem">${mins} min de práctica</p></div>`;
   const nx = currentPos();
   const showNext = (S.kind === 'lesson' || (S.kind === 'test' && passed)) && nx >= 0;
@@ -1183,6 +1299,7 @@ function openSettings(){
     <div class="vstatus" id="voiceStatus">Buscando voces…</div>
     <div class="frow"><label for="voicePicker">Voz</label><select id="voicePicker"></select></div>
     <div class="frow"><label for="rateSl">Velocidad: <span id="rateV">${rate.toFixed(2)}</span>×</label><input type="range" id="rateSl" min="0.5" max="1.15" step="0.05" value="${rate}"></div>
+    <div class="frow"><label for="goalSel">🎯 Meta diaria</label><select id="goalSel">${GOALS.map(n => `<option value="${n}" ${n === (prefs.goal || 20) ? 'selected' : ''}>${n} ejercicios al día</option>`).join('')}</select></div>
     <label class="switch">🎤 Ejercicios de hablar<input type="checkbox" id="spSw" ${prefs.speak ? 'checked' : ''}></label>
     <label class="switch">🔔 Sonidos<input type="checkbox" id="snSw" ${prefs.sounds ? 'checked' : ''}></label>
     <label class="switch">🌙 Modo oscuro<input type="checkbox" id="dkSw" ${dark ? 'checked' : ''}></label>
@@ -1193,6 +1310,7 @@ function openSettings(){
   $('rateSl').oninput = e => { rate = parseFloat(e.target.value); $('rateV').textContent = rate.toFixed(2); setStr(K.rate, String(rate)); };
   $('spSw').onchange = e => { prefs.speak = e.target.checked; prefs.speakPauseUntil = 0; saveAll(); renderReview(); };
   $('snSw').onchange = e => { prefs.sounds = e.target.checked; saveAll(); };
+  $('goalSel').onchange = e => { prefs.goal = +e.target.value; saveAll(); renderAll(); };
   $('dkSw').onchange = e => setDark(e.target.checked);
   $('testV').onclick = () => speak(LESSONS[0] ? ITEMS[LESSONS[0].items[0]].t : CFG.native);
   $('resetB').onclick = () => {
@@ -1212,8 +1330,20 @@ function initTheme(){
   setDark(t === 'dark');
 }
 document.addEventListener('keydown', e => {
-  if(e.key === 'Escape'){ if($('sheetOv').classList.contains('open')) closeSheet(); return; }
-  if(e.key === 'Enter' && S && $('session').classList.contains('open')){ const c = $('contBtn'); if(c && document.activeElement !== $('typeIn')){ e.preventDefault(); c.click(); } }
+  if(e.key === 'Escape' && $('sheetOv').classList.contains('open')){ closeSheet(); return; }
+  if(e.key === 'Escape' && S && $('session').classList.contains('open')){ quitSession(); return; }
+  if(!S || !$('session').classList.contains('open') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const typing = document.activeElement && document.activeElement.tagName === 'INPUT';
+  if(e.key === 'Enter'){ const c = $('contBtn'); if(c && !typing){ e.preventDefault(); c.click(); } return; }
+  if(typing) return;
+  // 1–4: choose an option · espacio: escuchar · L: escuchar lento
+  if(/^[1-9]$/.test(e.key)){
+    const o = $('sBody').querySelectorAll('.opt:not([disabled])')[+e.key - 1];
+    if(o){ e.preventDefault(); o.click(); }
+    return;
+  }
+  if(e.key === ' ' && $('pNorm')){ e.preventDefault(); $('pNorm').click(); return; }
+  if((e.key === 'l' || e.key === 'L') && $('pSlow')){ e.preventDefault(); $('pSlow').click(); }
 });
 document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && D && !S) renderAll(); });
 </script>
