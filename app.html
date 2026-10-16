@@ -356,6 +356,7 @@ if(!LANG_OK.includes(LANG)){ location.replace('index.html'); }
 else {
   const sc = document.createElement('script');
   sc.src = 'lang_' + LANG + '.js';
+  if(LANG === 'zh'){ const py = document.createElement('script'); py.src = 'vendor/pinyin-pro.js'; document.head.appendChild(py); }
   sc.onload = () => boot();
   sc.onerror = () => { document.getElementById('loading').textContent = 'No se pudo cargar el idioma. Revisa tu conexión y recarga.'; };
   document.head.appendChild(sc);
@@ -752,7 +753,7 @@ async function playBtn(btn, text, opt){
 /* Speech recognition, with clean start and automatic retries when the browser aborts. */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let activeRec = null;
-function stopRec(){ if(activeRec){ activeRec._stopped = true; try{ activeRec.abort(); }catch(e){} activeRec = null; } }
+function stopRec(){ if(activeRec){ const r = activeRec; activeRec = null; if(r._cancel) r._cancel(); else { r._stopped = true; try{ r.abort(); }catch(e){} } } }
 function speakPaused(){ return (prefs.speakPauseUntil || 0) > Date.now(); }
 function canSpeak(){ return !!SR && window.isSecureContext && prefs.speak && !speakPaused(); }
 function speakUnavailableMsg(){
@@ -769,6 +770,48 @@ async function primeMic(){
 // Speech engines write spoken numbers as digits ("三" → "3", "three" → "3"), so accept the digit form too.
 const NUMWORDS = {cero: 0, uno: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10, cien: 100, mil: 1000};
 function numberOf(item){ const k = String(item.es).split('(')[0].trim().toLowerCase(); return k in NUMWORDS ? NUMWORDS[k] : null; }
+
+/* ---------- Chinese: compare by SOUND (pinyin), not by character ----------
+ * The recognizer often writes a different character that sounds the same (三 → 山, 九 → 酒, 十 → 是, 八 → 吧)
+ * or a digit ("4"). So both sides are turned into pinyin without tones and compared with the usual
+ * confusions of Spanish speakers forgiven: zh/z, ch/c, sh/s, ü/u, -ng/-n. Tones are not graded. */
+const ZH_DIG = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+function zhNumToHan(n){
+  n = +n; if(!(n >= 0 && n < 10000)) return null;
+  if(n < 10) return ZH_DIG[n];
+  let out = '', zero = false;
+  for(const [u, c] of [[1000, '千'], [100, '百'], [10, '十']]){
+    const d = Math.floor(n / u) % 10;
+    if(d){ if(zero){ out += '零'; zero = false; } out += (u === 10 && d === 1 && !out ? '' : ZH_DIG[d]) + c; }
+    else if(out) zero = true;
+  }
+  const d = n % 10; if(d){ if(zero) out += '零'; out += ZH_DIG[d]; }
+  return out;
+}
+const zhFuzzy = s => s.replace(/ü|v/g, 'u').replace(/zh/g, 'z').replace(/ch/g, 'c').replace(/sh/g, 's').replace(/ng/g, 'n');
+function zhSyl(text){
+  if(!window.pinyinPro) return null;
+  const t = String(text).replace(/\d+/g, m => zhNumToHan(m) || m), parts = [];
+  t.replace(/[㐀-鿿]+|[a-zA-ZüÜ]+/g, m => {
+    if(/^[a-zA-ZüÜ]+$/.test(m)) parts.push(m.toLowerCase());          // the recognizer sometimes writes pinyin ("san")
+    else { try{ parts.push(...pinyinPro.pinyin(m, {type: 'array', toneType: 'none'})); }catch(e){} }
+    return m;
+  });
+  return parts;
+}
+function zhKey(text){ const s = zhSyl(text); return s ? s.map(zhFuzzy).join('') : null; }
+function zhPinyinMarks(text){ try{ return window.pinyinPro ? pinyinPro.pinyin(String(text).replace(/\d+/g, m => zhNumToHan(m) || m)) : ''; }catch(e){ return ''; } }
+function zhSoundMatch(alt, item){
+  const target = zhKey(item.t), h = zhKey(alt);
+  if(!target || !h) return false;
+  if(h === target) return true;
+  // Alone, «wǔ» (五) is very often written as 我 (wǒ) by the recognizer.
+  if(target === 'wu' && /^wo/.test(h) && h.length <= 4) return true;
+  // short words often come back inside a longer guess ("三个", "第三")
+  if(target.length <= 8 && h.includes(target) && h.length <= target.length + 8) return true;
+  return target.length >= 8 && lev(h, target) <= Math.floor(target.length * .2);
+}
+
 function heardMatches(alts, item){
   const e = cmp(item.t), n = numberOf(item);
   return alts.some(a => {
@@ -778,50 +821,92 @@ function heardMatches(alts, item){
     if(n !== null && (s === String(n) || s === cmp('一' + item.t))) return true;
     // Very short Chinese/Japanese/Korean words often come back inside a longer guess ("多" → "很多").
     if(CFG.cjk && e.length <= 3 && s.length <= e.length + 3 && s.includes(e)) return true;
+    if(CFG.lang === 'zh' && zhSoundMatch(a, item)) return true;
     return false;
   });
 }
-// Resolves {status:'ok'|'wrong'|'error', heard, msg}
-async function recognize(item, onListening){
+
+/* Speech recognition.
+ * - Says «Habla ahora» only when the microphone is really recording (onaudiostart), not before.
+ * - Keeps listening through short pauses (except on iPhone) and ends ~1.3 s after you stop talking.
+ * - Uses every guess the browser makes, interim ones included: one-syllable words often never get a "final" result.
+ * - If nothing was heard, it quietly tries again before giving up (~9 s in total).
+ * Resolves {status:'ok'|'wrong'|'error'|'cancel', heard, heardPy, msg}. */
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let micPrimed = false;
+async function recognize(item, onListening, onHeard){
   stopRec(); stopAudio();
-  const perm = await primeMic();
-  if(perm === 'denied') return {status: 'error', msg: 'Permite el micrófono para este sitio (candado de la barra de direcciones → Permisos).'};
-  if(perm === 'nomic') return {status: 'error', msg: 'No se encontró ningún micrófono.'};
-  await new Promise(r => setTimeout(r, 300));
+  if(!micPrimed){
+    const perm = await primeMic();
+    if(perm === 'denied') return {status: 'error', msg: 'Permite el micrófono para este sitio (candado de la barra de direcciones → Permisos).'};
+    if(perm === 'nomic') return {status: 'error', msg: 'No se encontró ningún micrófono.'};
+    micPrimed = true;
+    await new Promise(r => setTimeout(r, 250));
+  }
   return new Promise(resolve => {
-    let finished = false; const fin = r => { if(!finished){ finished = true; resolve(r); } };
-    const run = attempt => {
-      const r = new SR(); activeRec = r;
-      r.lang = CFG.code; r.maxAlternatives = 4; r.interimResults = true; r.continuous = false;
-      let got = false, started = false, interim = null;
-      const timer = setTimeout(() => { if(!started && !r._stopped){ r._stopped = true; try{ r.abort(); }catch(e){} fin({status: 'error', msg: 'El micrófono no respondió. Inténtalo de nuevo.'}); } }, 7000);
-      r.onstart = () => { started = true; clearTimeout(timer); onListening && onListening(); };
-      // Interim results help with one-syllable words, which some phones cut off before a final result.
+    let finished = false, heardAny = false, attempts = 0, rec = null, silenceT = null, lastFinal = '';
+    const alts = [], deadline = Date.now() + 9000;
+    const result = (status, extra) => {
+      const heard = (extra && extra.heard) || lastFinal || alts[alts.length - 1] || '';
+      return Object.assign({status, heard, heardPy: CFG.lang === 'zh' && /[㐀-鿿\d]/.test(heard) ? zhPinyinMarks(heard) : ''}, extra || {});
+    };
+    const fin = r => {
+      if(finished) return; finished = true;
+      clearTimeout(silenceT); clearTimeout(maxT);
+      if(rec){ rec._stopped = true; try{ rec.abort(); }catch(e){} }
+      if(activeRec === rec) activeRec = null;
+      resolve(r);
+    };
+    const evaluate = () => {
+      if(alts.length) fin(heardMatches(alts, item) ? result('ok', {heard: alts.find(a => heardMatches([a], item))}) : result('wrong'));
+      else if(heardAny) fin({status: 'error', msg: 'Te oí, pero no entendí las palabras. Acércate al micrófono y habla un poco más fuerte.'});
+      else fin({status: 'error', msg: 'No se escuchó nada. Espera a ver «🎤 Habla ahora» y di la palabra clara, sin apurarte.'});
+    };
+    const run = () => {
+      if(finished) return;
+      attempts++;
+      const r = new SR(); rec = r; activeRec = r;
+      r._cancel = () => fin({status: 'cancel'});
+      r._done = () => { if(alts.length || heardAny) evaluate(); else fin({status: 'cancel'}); };   // second tap on the mic
+      r.lang = CFG.code; r.maxAlternatives = 5; r.interimResults = true; r.continuous = !IS_IOS;
+      r.onaudiostart = () => { if(attempts === 1 && onListening) onListening(); if(navigator.vibrate) try{ navigator.vibrate(20); }catch(e){} };
+      r.onspeechstart = () => { heardAny = true; };
       r.onresult = e => {
-        const res = e.results[e.results.length - 1], alts = Array.from(res).map(x => x.transcript).filter(Boolean);
-        if(!alts.length) return;
-        const ok = heardMatches(alts, item);
-        if(res.isFinal === false && !ok){ interim = alts; return; }
-        got = true;
-        if(res.isFinal === false){ r._stopped = true; try{ r.abort(); }catch(err){} }
-        fin({status: ok ? 'ok' : 'wrong', heard: alts[0] || ''});
+        heardAny = true;
+        for(let i = e.resultIndex; i < e.results.length; i++){
+          const res = e.results[i];
+          for(let k = 0; k < res.length; k++){ const t = res[k].transcript.trim(); if(t && !alts.includes(t)) alts.push(t); }
+          if(res.isFinal && res[0].transcript.trim()) lastFinal = res[0].transcript.trim();
+        }
+        const full = Array.from(e.results).map(x => x[0].transcript).join(' ').trim();
+        if(full && !alts.includes(full)) alts.push(full);
+        if(heardMatches(alts, item)){ evaluate(); return; }          // right answer: stop at once
+        onHeard && onHeard(lastFinal || alts[alts.length - 1]);
+        clearTimeout(silenceT); silenceT = setTimeout(evaluate, 1300);
       };
       r.onerror = e => {
-        clearTimeout(timer);
-        if(r._stopped) return;
-        if(e.error === 'aborted' && attempt < 3){ r._stopped = true; setTimeout(() => run(attempt + 1), 450 * attempt); return; }
-        const m = {'aborted': 'El navegador interrumpió el micrófono. Desconecta auriculares Bluetooth o cierra apps que lo usen.',
-          'not-allowed': 'Permite el micrófono para este sitio.', 'service-not-allowed': 'Permite el micrófono para este sitio.',
-          'no-speech': 'No se escuchó nada. Toca 🎤 y habla enseguida.', 'audio-capture': 'No se pudo usar el micrófono. ¿Otra app lo está usando?',
+        if(r._stopped || finished) return;
+        if(e.error === 'no-speech' || e.error === 'aborted' || e.error === 'no-match') return;   // onend decides
+        const m = {'not-allowed': 'Permite el micrófono para este sitio (candado de la barra de direcciones → Permisos).',
+          'service-not-allowed': 'El navegador bloqueó el reconocimiento de voz. En iPhone activa Dictado en Ajustes › General › Teclado.',
+          'audio-capture': 'No se pudo usar el micrófono. ¿Otra app lo está usando?',
           'network': 'El reconocimiento de voz necesita internet.', 'language-not-supported': 'Tu dispositivo no reconoce voz en este idioma.'};
         fin({status: 'error', msg: m[e.error] || ('Error de reconocimiento: ' + e.error)});
       };
-      r.onend = () => { clearTimeout(timer); if(r._stopped) return; if(activeRec === r) activeRec = null; if(!got){ if(interim) fin({status: heardMatches(interim, item) ? 'ok' : 'wrong', heard: interim[0]}); else fin({status: 'error', msg: 'No se escuchó nada. Toca 🎤 y habla enseguida.'}); } };
-      try{ r.start(); }catch(err){ clearTimeout(timer); if(attempt < 3) setTimeout(() => run(attempt + 1), 400); else fin({status: 'error', msg: 'No se pudo iniciar el micrófono. Recarga la página.'}); }
+      r.onend = () => {
+        if(r._stopped || finished) return;
+        if(alts.length){ evaluate(); return; }
+        if(attempts < 4 && Date.now() < deadline){ setTimeout(run, 120); return; }   // nothing heard yet: keep listening
+        evaluate();
+      };
+      try{ r.start(); }
+      catch(err){ if(attempts < 3) setTimeout(run, 400); else fin({status: 'error', msg: 'No se pudo iniciar el micrófono. Recarga la página.'}); }
     };
-    run(1);
+    const maxT = setTimeout(evaluate, 10000);
+    run();
   });
 }
+function heardText(r){ return '“' + r.heard + '”' + (r.heardPy ? ' (' + r.heardPy + ')' : ''); }
 
 /* ---------- little sounds ---------- */
 let actx = null;
@@ -985,12 +1070,15 @@ function renderStep(){
       wireAudio(it, true);
       const tm = $('tryMic');
       if(tm) tm.onclick = async () => {
-        tm.disabled = true; $('micMsg').className = 'micmsg'; $('micMsg').textContent = 'Preparando…';
-        const r = await recognize(it, () => { if($('micMsg')) $('micMsg').textContent = '🎤 Escuchando…'; });
-        if(!$('micMsg')) return;
-        tm.disabled = false;
+        if(activeRec && activeRec._done){ activeRec._done(); return; }      // second tap: stop and check
+        $('micMsg').className = 'micmsg'; $('micMsg').textContent = '⏳ Encendiendo el micrófono…'; tm.textContent = '⏹ Listo';
+        const r = await recognize(it, () => { if($('micMsg')) $('micMsg').textContent = '🎤 Habla ahora'; },
+          h => { if($('micMsg')) $('micMsg').textContent = '👂 ' + h; });
+        if(!$('micMsg') || $('tryMic') !== tm) return;
+        tm.textContent = '🎤 Probar otra vez';
         if(r.status === 'ok'){ $('micMsg').className = 'micmsg ok'; $('micMsg').textContent = '✅ ¡Muy bien!'; beep('ok'); }
-        else if(r.status === 'wrong'){ $('micMsg').className = 'micmsg bad'; $('micMsg').textContent = 'Se entendió: “' + r.heard + '”. Intenta otra vez.'; }
+        else if(r.status === 'wrong'){ $('micMsg').className = 'micmsg bad'; $('micMsg').textContent = 'Se entendió: ' + heardText(r) + '. Intenta otra vez.'; }
+        else if(r.status === 'cancel'){ $('micMsg').textContent = ''; tm.textContent = '🎤 Probar mi pronunciación'; }
         else { $('micMsg').className = 'micmsg bad'; $('micMsg').textContent = r.msg; }
       };
       footContinue(); break;
@@ -1055,16 +1143,22 @@ function renderStep(){
       let tries = 0;
       $('micBig').onclick = async () => {
         const mb = $('micBig');
-        if(mb.classList.contains('listening')){ stopRec(); mb.classList.remove('listening'); $('micMsg').textContent = 'Toca el micrófono y habla'; return; }
-        mb.classList.add('listening'); $('micMsg').className = 'micmsg'; $('micMsg').textContent = 'Preparando…';
-        const r = await recognize(it, () => { if($('micMsg')) $('micMsg').textContent = '🎤 Escuchando… di la frase'; });
-        if(!$('micBig') || S.steps[S.i] !== st) return;
+        if(mb.classList.contains('listening')){ if(activeRec && activeRec._done) activeRec._done(); else stopRec(); return; }   // second tap: stop and check
+        mb.classList.add('listening'); $('micMsg').className = 'micmsg'; $('micMsg').textContent = '⏳ Encendiendo el micrófono…';
+        $('micOk') && $('micOk').remove();
+        const r = await recognize(it, () => { if($('micMsg')) $('micMsg').textContent = '🎤 Habla ahora'; },
+          h => { if($('micMsg')) $('micMsg').textContent = '👂 ' + h; });
+        if(!$('micBig') || !S || S.steps[S.i] !== st) return;
         $('micBig').classList.remove('listening');
         if(r.status === 'ok'){ answer(true); return; }
+        if(r.status === 'cancel'){ $('micMsg').className = 'micmsg'; $('micMsg').textContent = 'Toca el micrófono y habla'; return; }
         if(r.status === 'wrong'){
           tries++;
-          if(tries >= 3){ answer(false, 'Se entendió: “' + r.heard + '”'); return; }
-          $('micMsg').className = 'micmsg bad'; $('micMsg').textContent = 'Se entendió: “' + r.heard + '”. Te quedan ' + (3 - tries) + ' intentos.'; beep('bad');
+          if(tries >= 3){ answer(false, 'Se entendió: ' + heardText(r)); return; }
+          $('micMsg').className = 'micmsg bad'; $('micMsg').textContent = 'Se entendió: ' + heardText(r) + '. Te quedan ' + (3 - tries) + (3 - tries === 1 ? ' intento.' : ' intentos.'); beep('bad');
+          // Speech recognition is unreliable with very short words: let the learner overrule it.
+          $('micMsg').insertAdjacentHTML('afterend', `<div style="text-align:center" id="micOk"><button class="linkbtn" id="micOkB">✓ Lo dije bien, contar como correcta</button></div>`);
+          $('micOkB').onclick = () => answer(true, 'Marcada como correcta por ti');
         } else { $('micMsg').className = 'micmsg bad'; $('micMsg').textContent = r.msg; }
       };
       $('sFoot').className = 's-foot';
@@ -1099,6 +1193,8 @@ function checkTyped(it, val){
 // Record the answer, show feedback, re-queue misses once (except in tests).
 function answer(ok, note){
   const st = S.steps[S.i], it = ITEMS[st.id];
+  const mo = $('micOk'); if(mo) mo.remove();
+  const mb = $('micBig'); if(mb){ stopRec(); mb.disabled = true; mb.classList.remove('listening'); }
   S.answered++; if(ok) S.correct++;
   const r = S.res[st.id] || (S.res[st.id] = {miss: 0, seen: 0});
   r.seen++; if(!ok && !st.retry) r.miss++;
